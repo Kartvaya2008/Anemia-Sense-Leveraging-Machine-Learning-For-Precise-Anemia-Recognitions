@@ -115,3 +115,26 @@ The deployment script is available in `app.py`.
 
 ## 9. Project Structure
 
+Anemia-Sense-ML/
+│
+├── app.py
+├── model/
+│ └── anemia_model.pkl
+├── notebook/
+│ └── anemia_training.ipynb
+├── data/
+│ └── anemia_dataset.csv
+├── templates/
+│ ├── index.html
+│ └── result.html
+├── static/
+│ └── style.css
+├── screenshots/
+├── docs/
+│ └── Anemia_Sense_Report.pdf
+├── requirements.txt
+└── README.md
+
+
+
+
