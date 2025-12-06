@@ -11,20 +11,166 @@ st.set_page_config(
 )
 
 # ========== CUSTOM CSS FOR MODERN UI ==========
-/* Remove Streamlit's default top big header box */
+st.markdown("""
+<style>
+/* Remove big white rounded header box at top */
 header[data-testid="stHeader"] {
     background: transparent !important;
 }
-
 header[data-testid="stHeader"] > div {
     background: transparent !important;
     box-shadow: none !important;
 }
-
 header[data-testid="stHeader"]::before {
     display: none !important;
 }
 
+/* Background */
+.stApp {
+    background: linear-gradient(135deg, #fdf4ff, #e0f2fe);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Center card */
+.block-container {
+    max-width: 900px !important;
+    padding-top: 0 !important;      /* top gap remove */
+}
+
+/* Glass card */
+.glass-card {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 28px;
+    box-shadow:
+        0 24px 60px rgba(15, 23, 42, 0.16),
+        0 0 0 1px rgba(148, 163, 184, 0.2);
+    padding: 28px 30px 26px 30px;
+    margin-top: 24px;               /* thoda sa niche for breathing room */
+}
+
+/* Left title area */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: rgba(56, 189, 248, 0.12);
+    color: #0369a1;
+    font-weight: 600;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.25);
+}
+
+.app-title {
+    font-size: 30px;
+    line-height: 1.15;
+    color: #0f172a;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.app-title span {
+    color: #e11d48;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.pills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: rgba(15, 23, 42, 0.04);
+    color: #4b5563;
+}
+
+/* Right side header */
+.app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 18px;
+    background: radial-gradient(circle at 30% 0, #f97316, #ea580c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 10px 20px rgba(248, 113, 113, 0.45);
+}
+
+.form-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.form-subtitle {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.status-chip {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: rgba(22, 163, 74, 0.09);
+    color: #15803d;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #22c55e;
+}
+
+/* Note text */
+.note-text {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* Predict button */
+.stButton > button {
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ec4899, #f97316);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    padding: 0.5rem 1.6rem;
+    box-shadow: 0 12px 25px rgba(248, 113, 113, 0.5);
+}
+.stButton > button:hover {
+    filter: brightness(1.03);
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ========== LOAD MODEL (change path as per your file) ==========
 # with open("anemia_model.pkl", "rb") as f:
@@ -153,4 +299,3 @@ with right:
             )
 
 st.markdown("</div>", unsafe_allow_html=True)
-
