@@ -13,6 +13,37 @@ st.set_page_config(
 # ========== CUSTOM CSS FOR MODERN UI ==========
 st.markdown("""
 <style>
+
+/* ✅ COMPLETELY HIDE STREAMLIT TOP HEADER + DECORATION BAR */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+div[data-testid="stToolbar"] {
+    display: none !important;
+}
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Background */
+.stApp {
+    background: linear-gradient(135deg, #fdf4ff, #e0f2fe);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Center card */
+.block-container {
+    max-width: 900px !important;
+    padding-top: 0 !important;   /* upar ka gap bhi hata diya */
+}
+
+/* ...yahan se tumhari baaki purani CSS as-it-is... */
+
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
 /* Remove big white rounded header box at top */
 header[data-testid="stHeader"] {
     background: transparent !important;
@@ -299,3 +330,4 @@ with right:
             )
 
 st.markdown("</div>", unsafe_allow_html=True)
+
