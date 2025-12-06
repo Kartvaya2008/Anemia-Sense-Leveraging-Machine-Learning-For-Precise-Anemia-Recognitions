@@ -13,6 +13,18 @@ st.set_page_config(
 # ========== CUSTOM CSS FOR MODERN UI ==========
 st.markdown("""
 <style>
+/* Remove big white rounded header box at top */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+header[data-testid="stHeader"] > div {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+header[data-testid="stHeader"]::before {
+    display: none !important;
+}
+
 /* Background */
 .stApp {
     background: linear-gradient(135deg, #fdf4ff, #e0f2fe);
@@ -20,12 +32,9 @@ st.markdown("""
 }
 
 /* Center card */
-.main > div {
-    padding-top: 40px;
-}
-
 .block-container {
     max-width: 900px !important;
+    padding-top: 0 !important;      /* top gap remove */
 }
 
 /* Glass card */
@@ -38,6 +47,7 @@ st.markdown("""
         0 24px 60px rgba(15, 23, 42, 0.16),
         0 0 0 1px rgba(148, 163, 184, 0.2);
     padding: 28px 30px 26px 30px;
+    margin-top: 24px;               /* thoda sa niche for breathing room */
 }
 
 /* Left title area */
@@ -163,7 +173,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ========== LOAD MODEL (change path as per your file) ==========
-# Uncomment and edit path when your model is ready
 # with open("anemia_model.pkl", "rb") as f:
 #     model = pickle.load(f)
 
@@ -269,20 +278,15 @@ with right:
 
     # --------- PREDICTION LOGIC ----------
     if submitted:
-        # convert gender text to number
         gender_value = 0 if gender.startswith("0") else 1
-
-        # Prepare features array (order same as model training)
         features = np.array([[gender_value, hb, pcv, mcv, mchc]])
 
         try:
-            # Uncomment when model is loaded
             # prediction = model.predict(features)[0]
 
-            # Dummy logic (remove when real model used)
-            # yahan sirf demo ke liye:
+            # Dummy logic
             score = (hb * 0.4) + (mcv * 0.1) + (mchc * 0.2)
-            prediction = 1 if score < 25 else 0  # 1 = anemia risk, 0 = normal
+            prediction = 1 if score < 25 else 0
 
             if prediction == 1:
                 st.error("🔴 **High chance of Anemia (model output = 1)**\n\nPlease consult a doctor for proper tests.")
