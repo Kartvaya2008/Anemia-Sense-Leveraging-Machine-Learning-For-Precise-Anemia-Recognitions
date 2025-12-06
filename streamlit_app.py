@@ -1,318 +1,309 @@
-# app.py
 import streamlit as st
 import numpy as np
 import pickle
 
-# ========== BASIC PAGE SETTINGS ==========
+# ------------------- Page config -------------------
 st.set_page_config(
     page_title="AnemiaSense – Anemia Prediction",
     page_icon="🩸",
-    layout="centered"
+    layout="wide"
 )
 
-# ========== CUSTOM CSS FOR MODERN UI (HIDES STREAMLIT TOP BUBBLE) ==========
-st.markdown("""
-<style>
-/* ---------- STRONG RULES TO REMOVE STREAMLIT TOP BUBBLE / TOOLBAR / DECORATION ---------- */
+# ------------------- Custom CSS --------------------
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f5f5f7;
+    }
+    .main {
+        padding: 0rem 4rem 4rem 4rem;
+    }
+    .hero-wrapper {
+        padding: 2.5rem 3rem 1.5rem 3rem;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 40%, #f3e8ff 100%);
+        border: 1px solid #ececec;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.09);
+    }
+    .hero-title {
+        font-size: 2.6rem;
+        font-weight: 700;
+        line-height: 1.15;
+        color: #111827;
+        margin-bottom: 0.4rem;
+    }
+    .hero-title span {
+        background: linear-gradient(120deg, #a855f7, #6366f1);
+        -webkit-background-clip: text;
+        color: transparent;
+    }
+    .hero-subtitle {
+        font-size: 0.98rem;
+        color: #6b7280;
+        max-width: 480px;
+        margin-bottom: 1.8rem;
+    }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.8rem;
+        border-radius: 999px;
+        background-color: rgba(129, 140, 248, 0.08);
+        color: #4f46e5;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        margin-bottom: 0.8rem;
+    }
+    .pill span.icon {
+        font-size: 0.9rem;
+    }
+    .card {
+        padding: 1.1rem 1.1rem 1rem 1.1rem;
+        border-radius: 18px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+        height: 100%;
+    }
+    .card-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.25rem;
+    }
+    .card-body {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    .input-wrapper {
+        margin-top: 2.3rem;
+        padding: 1.8rem 2.2rem 2rem 2.2rem;
+        border-radius: 22px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    }
+    .input-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.2rem;
+    }
+    .input-subtitle {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-bottom: 1.2rem;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 999px;
+        padding: 0.7rem 1rem;
+        font-weight: 600;
+        border: none;
+        background: linear-gradient(120deg, #6366f1, #a855f7);
+        color: white;
+        box-shadow: 0 10px 24px rgba(88, 80, 236, 0.45);
+    }
+    .stButton>button:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 14px 30px rgba(88, 80, 236, 0.6);
+    }
+    .result-box {
+        padding: 1.2rem 1.4rem;
+        border-radius: 18px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        margin-top: 0.8rem;
+    }
+    .result-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+    .result-text-ok {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #059669;
+    }
+    .result-text-bad {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #b91c1c;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-/* Hide first child bubble inside main app view container (exact bubble in many Streamlit versions) */
-div[data-testid="stAppViewContainer"] > div:first-child {
-    display: none !important;
-}
+# ------------------- Load model --------------------
+try:
+    model = pickle.load(open("model.pkl", "rb"))
+    model_loaded = True
+except Exception as e:
+    model_loaded = False
+    st.error("❌ Could not load `model.pkl`. Please check that the file exists in the repo.")
+    st.exception(e)
 
-/* Hide header, toolbar and decoration elements */
-header[data-testid="stHeader"],
-div[data-testid="stToolbar"],
-div[data-testid="stDecoration"],
-div[data-testid="MainMenu"],
-div[role="banner"] {
-    display: none !important;
-}
+# ------------------- HERO SECTION ------------------
+st.markdown('<div class="hero-wrapper">', unsafe_allow_html=True)
 
-/* Hide any top-level empty rounded wrappers that sometimes appear */
-div[style*="border-radius"][role="region"] {
-    display: none !important;
-}
+col_hero_left, col_hero_right = st.columns([2.4, 2])
 
-/* Remove leftover top padding so content sits flush */
-.block-container {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-    max-width: 900px !important;
-}
-
-/* ---------- YOUR APP STYLING BELOW ---------- */
-
-/* App background */
-.stApp {
-    background: linear-gradient(135deg, #fdf4ff, #e0f2fe);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-/* Glass card styling */
-.glass-card {
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 28px;
-    box-shadow:
-        0 24px 60px rgba(15, 23, 42, 0.16),
-        0 0 0 1px rgba(148, 163, 184, 0.2);
-    padding: 28px 30px 26px 30px;
-    margin-top: 24px;
-}
-
-/* Left title area */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    background: rgba(56, 189, 248, 0.12);
-    color: #0369a1;
-    font-weight: 600;
-}
-
-.badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: #22c55e;
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.25);
-}
-
-.app-title {
-    font-size: 30px;
-    line-height: 1.15;
-    color: #0f172a;
-    margin-top: 10px;
-    margin-bottom: 6px;
-}
-
-.app-title span {
-    color: #e11d48;
-}
-
-.subtitle {
-    font-size: 14px;
-    color: #6b7280;
-    line-height: 1.5;
-    margin-bottom: 10px;
-}
-
-.pills-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 4px;
-}
-
-.pill {
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    background: rgba(15, 23, 42, 0.04);
-    color: #4b5563;
-}
-
-/* Right side header */
-.app-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 18px;
-    background: radial-gradient(circle at 30% 0, #f97316, #ea580c);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 18px;
-    box-shadow: 0 10px 20px rgba(248, 113, 113, 0.45);
-}
-
-.form-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.form-subtitle {
-    font-size: 11px;
-    color: #9ca3af;
-}
-
-.status-chip {
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    background: rgba(22, 163, 74, 0.09);
-    color: #15803d;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: #22c55e;
-}
-
-/* Note text */
-.note-text {
-    font-size: 11px;
-    color: #9ca3af;
-}
-
-/* Predict button */
-.stButton > button {
-    border-radius: 999px;
-    background: linear-gradient(135deg, #ec4899, #f97316);
-    color: white;
-    font-weight: 600;
-    font-size: 13px;
-    border: none;
-    padding: 0.5rem 1.6rem;
-    box-shadow: 0 12px 25px rgba(248, 113, 113, 0.5);
-}
-.stButton > button:hover {
-    filter: brightness(1.03);
-}
-
-/* Small responsive tweaks */
-@media (max-width: 780px) {
-    .glass-card { padding: 18px; margin-top: 8px; }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ========== LOAD MODEL (change path as per your file) ==========
-# with open("anemia_model.pkl", "rb") as f:
-#     model = pickle.load(f)
-
-# ========== UI LAYOUT ==========
-
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-
-# 2 columns: left info, right form
-left, right = st.columns([1.2, 1])
-
-with left:
+with col_hero_left:
     st.markdown(
         """
-        <div class="badge">
-            <span class="badge-dot"></span>
-            Smart Health Insight
+        <div class="pill"><span class="icon">🩸</span>AnemiaSense • ML Powered</div>
+        <div class="hero-title">
+            Hi there, <span>Kartvaya</span><br/>
+            What would you like to check today?
+        </div>
+        <div class="hero-subtitle">
+            Enter a few blood-test values and let AnemiaSense estimate whether anemia
+            is likely or not – powered by your trained machine learning model.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div class="app-title">
-            AnemiaSense<br>
-            <span>Early Anemia</span> Prediction System
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <p class="subtitle">
-            Enter your basic blood report values and get an instant
-            ML-based insight about possible anemia risk.
-            <br><b>For project / learning use only.</b>
-        </p>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <div class="pills-row">
-            <div class="pill">⚡ Fast prediction</div>
-            <div class="pill">🩸 Uses key CBC parameters</div>
-            <div class="pill">🔐 Data stays on device</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with right:
-    # header of small card
-    col1, col2 = st.columns([2.2, 1])
-
-    with col1:
-        c1, c2 = st.columns([1, 3])
-        with c1:
-            st.markdown('<div class="app-icon">AS</div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown(
-                """
-                <div class="form-title">Check Your Anemia Risk</div>
-                <div class="form-subtitle">Fill all fields before predicting</div>
-                """,
-                unsafe_allow_html=True,
-            )
-    with col2:
+with col_hero_right:
+    c1, c2, c3 = st.columns(3)
+    with c1:
         st.markdown(
             """
-            <div class="status-chip">
-                <span class="status-dot"></span>
-                Model Ready
+            <div class="card">
+                <div class="card-title">Instant Risk Check</div>
+                <div class="card-body">
+                    Get a quick anemia risk prediction from your CBC-style values.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with c2:
+        st.markdown(
+            """
+            <div class="card">
+                <div class="card-title">Follow-up Support</div>
+                <div class="card-body">
+                    Re-check values after treatment and compare predicted outcomes.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with c3:
+        st.markdown(
+            """
+            <div class="card">
+                <div class="card-title">ML Transparency</div>
+                <div class="card-body">
+                    Built on classical ML models you trained & evaluated.
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    st.write("")  # small space
+st.markdown("</div>", unsafe_allow_html=True)
 
-    # --------- FORM INPUTS ----------
+# ------------------- INPUT + RESULT SECTION --------
+st.markdown('<div class="input-wrapper">', unsafe_allow_html=True)
+
+left, right = st.columns([1.6, 1.2])
+
+with left:
+    st.markdown(
+        """
+        <div class="input-title">Enter your blood parameters</div>
+        <div class="input-subtitle">
+            These are example features from your project: gender, hemoglobin,
+            PCV, MCV, and MCHC. Use values similar to a normal CBC report.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     with st.form("anemia_form"):
         c1, c2 = st.columns(2)
-
         with c1:
-            gender_label = "Gender (0 = Male, 1 = Female)"
-            gender = st.selectbox(gender_label, ["0 - Male", "1 - Female"])
-            hb = st.number_input("Hemoglobin (g/dL)", min_value=0.0, max_value=25.0, value=13.0, step=0.1)
-            pcv = st.number_input("PCV (%)", min_value=0.0, max_value=80.0, value=40.0, step=0.5)
-
+            gender = st.selectbox(
+                "Gender",
+                options=[0, 1],
+                format_func=lambda x: "Male (0)" if x == 0 else "Female (1)"
+            )
+            hb = st.number_input("Hemoglobin (g/dL)", min_value=0.0, max_value=25.0, value=11.6, step=0.1)
+            pcv = st.number_input("PCV (%)", min_value=0.0, max_value=80.0, value=22.3, step=0.1)
         with c2:
-            mcv = st.number_input("MCV (fL)", min_value=40.0, max_value=140.0, value=88.0, step=0.5)
-            mchc = st.number_input("MCHC (g/dL)", min_value=20.0, max_value=40.0, value=32.0, step=0.1)
+            mcv = st.number_input("MCV (fL)", min_value=0.0, max_value=130.0, value=30.9, step=0.1)
+            mchc = st.number_input("MCHC (g/dL)", min_value=0.0, max_value=45.0, value=74.5, step=0.1)
 
-        st.markdown(
-            '<p class="note-text">⚠️ This app is a demo and does not replace professional medical advice.</p>',
-            unsafe_allow_html=True,
-        )
+        submitted = st.form_submit_button("Run Anemia Prediction")
 
-        submitted = st.form_submit_button("Predict Now →")
+with right:
+    st.markdown(
+        """
+        <div class="input-title">Prediction Panel</div>
+        <div class="input-subtitle">
+            Once you submit the form, the model's prediction and a short
+            interpretation will appear here.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # --------- PREDICTION LOGIC ----------
-    if submitted:
-        gender_value = 0 if gender.startswith("0") else 1
-        features = np.array([[gender_value, hb, pcv, mcv, mchc]])
+    if not model_loaded:
+        st.info("Waiting for a valid model file (`model.pkl`).")
+    else:
+        if "last_pred" not in st.session_state:
+            st.session_state.last_pred = None
 
-        try:
-            # prediction = model.predict(features)[0]
+        if 'submitted' in locals() and submitted and model_loaded:
+            features = np.array([[gender, hb, pcv, mcv, mchc]])
+            pred = model.predict(features)[0]
+            st.session_state.last_pred = int(pred)
 
-            # Dummy logic
-            score = (hb * 0.4) + (mcv * 0.1) + (mchc * 0.2)
-            prediction = 1 if score < 25 else 0
-
-            if prediction == 1:
-                st.error("🔴 **High chance of Anemia (model output = 1)**\n\nPlease consult a doctor for proper tests.")
+        if st.session_state.last_pred is not None:
+            if st.session_state.last_pred == 0:
+                st.markdown(
+                    """
+                    <div class="result-box">
+                        <div class="result-label">Prediction</div>
+                        <div class="result-text-ok">
+                            ✅ No anemia detected based on the provided values.
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                st.success("🟢 **Low chance of Anemia (model output = 0)**\n\nValues look okay as per this model.")
-        except NameError:
-            st.warning(
-                "Model file not loaded. Please load your trained model in the code "
-                "(section `LOAD MODEL`) and then run again."
+                st.markdown(
+                    """
+                    <div class="result-box">
+                        <div class="result-label">Prediction</div>
+                        <div class="result-text-bad">
+                            ⚠️ Anemia likely – please consult a healthcare professional.
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.markdown(
+                """
+                <div class="result-box">
+                    <div class="result-label">Prediction</div>
+                    <div class="result-text-ok">
+                        Fill the form on the left and click “Run Anemia Prediction”.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
 st.markdown("</div>", unsafe_allow_html=True)
