@@ -1,140 +1,43 @@
 # Anemia Sense: Leveraging Machine Learning for Precise Anemia Recognition
 
-## Project Level
-Intermediate
-
-## Category
-Machine Learning
-
-## Developer
-KR
-
-## Mentor
-Revanth
-
----
+Anemia Sense is a data-driven machine learning project designed to accurately detect anemia using basic blood test parameters. The system demonstrates a complete end-to-end ML workflow, including data preprocessing, exploratory analysis, model building, hyperparameter tuning, evaluation, and deployment using a simple yet effective Streamlit interface. This project aims to showcase how artificial intelligence can support early healthcare screening, especially in resource-limited environments.
 
 ## 1. Project Overview
+Anemia is a condition where the body lacks enough healthy red blood cells or hemoglobin, leading to fatigue, weakness, and long-term health complications. Traditional diagnosis requires laboratory testing and manual interpretation. Anemia Sense attempts to automate this process by using machine learning algorithms to predict whether a person is anemic based on common hematology features. Although this project is not a medical substitute, it serves as a prototype for future healthcare analytics systems.
 
-Anemia Sense is a machine learning-based application that predicts whether a person is anemic based on simple blood test values. The project focuses on early detection, faster screening, and assisting healthcare analysis. This system is designed for educational use and demonstrates how machine learning can support medical decision-making.
-
----
-
-## 2. Objectives
-
-- Build an ML model to classify anemia.
-- Clean and preprocess medical dataset.
-- Perform Exploratory Data Analysis (EDA).
-- Train and evaluate multiple machine learning algorithms.
-- Deploy a working web application using Streamlit or Flask.
-- Provide an interactive interface for user input and predictions.
-
----
-
-## 3. Understanding Anemia
-
-Anemia is a condition where the body lacks enough red blood cells or hemoglobin. It affects oxygen transport, energy levels, and overall health. Early recognition can help patients receive timely treatment.
-
----
-
-## 4. Dataset Description
-
-The dataset includes the following features:
-
-| Feature | Description |
-|--------|-------------|
-| Gender | 0 = Male, 1 = Female |
-| Hemoglobin (Hb) | Hemoglobin level (g/dL) |
-| PCV | Packed Cell Volume (%) |
-| MCV | Mean Corpuscular Volume (fL) |
-| MCHC | Mean Corpuscular Hemoglobin Concentration (g/dL) |
-
-Target Variable:
-- 1 = Anemic
-- 0 = Not Anemic
-
----
-
-## 5. Machine Learning Workflow
-
-1. Data Collection  
-2. Data Cleaning and Preprocessing  
-3. Exploratory Data Analysis  
-4. Feature Engineering  
-5. Model Training  
-6. Model Evaluation  
-7. Deployment using Streamlit or Flask  
-
----
-
-## 6. Model Selection and Training
-
-Various machine learning models were tested, including:
-
-- Logistic Regression  
-- Random Forest Classifier  
-- XGBoost  
-- Support Vector Machine  
-- Neural Network (optional)
-
-Random Forest performed the best and was selected as the final model. The final trained model is saved as `model.pkl`.
-
----
-
-## 7. Model Performance
-
-The performance was evaluated using:
-
-- Accuracy Score  
-- Precision  
-- Recall  
-- F1-Score  
-- Confusion Matrix
-
-The model achieved an accuracy between 92% and 97%.
-
-Screenshots of the heatmap, evaluation metrics, and application interface are located in the `screenshots/` folder.
-
----
-
-## 8. Web Application (Streamlit/Flask)
-
-The application allows users to enter:
-
+## 2. Dataset Description
+The dataset includes important blood parameters:
 - Gender  
 - Hemoglobin  
-- PCV  
-- MCV  
-- MCHC  
+- Packed Cell Volume (PCV)  
+- Mean Corpuscular Volume (MCV)  
+- Mean Corpuscular Hemoglobin Concentration (MCHC)  
 
-After entering the values, the model predicts whether the person is anemic.
+**Target Variable:**  
+- 1 → Anemic  
+- 0 → Not Anemic  
 
-The deployment script is available in `app.py`.
+Preprocessing steps included handling missing values, fixing data types, removing duplicates, and scaling numerical features.
 
----
+## 3. Exploratory Data Analysis (EDA)
+EDA revealed patterns such as distribution of hemoglobin levels, comparison between anemic and non-anemic groups, and correlation analysis. A heatmap indicated that Hemoglobin and PCV were the strongest predictors for anemia classification.
 
-## 9. Project Structure
+## 4. Model Development and Evaluation
+Multiple algorithms were tested:
+- Logistic Regression  
+- Random Forest  
+- XGBoost  
+- Support Vector Machine  
 
-Anemia-Sense-ML/
-│
-├── app.py
-├── model/
-│ └── anemia_model.pkl
-├── notebook/
-│ └── anemia_training.ipynb
-├── data/
-│ └── anemia_dataset.csv
-├── templates/
-│ ├── index.html
-│ └── result.html
-├── static/
-│ └── style.css
-├── screenshots/
-├── docs/
-│ └── Anemia_Sense_Report.pdf
-├── requirements.txt
-└── README.md
+Random Forest achieved the highest performance, with an accuracy of **92–97%**, strong precision-recall values, and a balanced confusion matrix. This model was selected as the final classifier and exported as `model.pkl` for deployment.
 
+## 5. Deployment Using Streamlit
+A user-friendly Streamlit application was built to allow real-time predictions. Users enter values for Gender, Hemoglobin, PCV, MCV, and MCHC, and the app instantly returns:
+- **"You have anemia."** or  
+- **"You are not anemic."**
 
+This makes the model accessible for demonstrations and educational purposes.
 
+## 6. Conclusion
+Anemia Sense highlights the potential of machine learning in assisting medical diagnostics. By combining data preprocessing, model development, evaluation metrics, and an interactive frontend, the project serves as a complete ML pipeline suitable for academic, portfolio, or research use.
 
