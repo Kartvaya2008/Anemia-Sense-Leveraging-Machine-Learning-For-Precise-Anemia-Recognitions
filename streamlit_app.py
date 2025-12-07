@@ -2,231 +2,351 @@
 import streamlit as st
 import numpy as np
 import pickle
-from typing import List
+from datetime import datetime
 
+# -------------------------
+# Configuration
+# -------------------------
+MODEL_FILENAME = "model.pkl"
+# Order of input features expected by the model
+FEATURE_ORDER = ["gender", "hemoglobin", "mch", "mchc", "mcv"]
+
+# -------------------------
+# Page setup
+# -------------------------
 st.set_page_config(page_title="AnemiaSense", page_icon="🩸", layout="centered")
 
-# ---------------------------
-# CONFIG: Edit these to match your model's expected feature order.
-# Keep the first feature 'gender' encoded as 0 (Male) or 1 (Female).
-# Add or remove feature names to match your dataset/model input order.
-# Example default set (common hematology columns).
-FEATURE_COLUMNS: List[str] = [
-    "gender",        # 0 = Male, 1 = Female
-    "hemoglobin",    # g/dL
-    "mch",           # Mean Corpuscular Hemoglobin
-    "mchc",          # Mean Corpuscular Hemoglobin Concentration
-    "mcv",           # Mean Corpuscular Volume
-    "rbc",           # Red Blood Cell count (optional)
-    "wbc",           # White Blood Cell count (optional)
-    "platelets",     # Platelet count (optional)
-    "pcv"            # Packed Cell Volume (optional)
-]
-MODEL_FILENAME = "model.pkl"  # expected model file in project root
+# -------------------------
+# Minimal CSS for premium neon + layout
+# Uses prefers-color-scheme to adapt to Light/Dark modes
+# -------------------------
+CSS = """
+<style>
+:root{
+  --neon: #A855FF;
+  --neon-2: #C67FFF;
+  --muted-light: #6B6B6B;
+  --label-neon: #B18BE8;
+  --glass-light: rgba(255,255,255,0.7);
+  --glass-dark: rgba(255,255,255,0.04);
+  --card-bg-light: rgba(255,255,255,0.9);
+  --card-bg-dark: rgba(255,255,255,0.02);
+  --shadow: 0 10px 30px rgba(11,7,28,0.10);
+  --radius: 14px;
+}
 
-# ---------------------------
-# Session state for simple routing
-# ---------------------------
+@media (prefers-color-scheme: light) {
+  body { background: linear-gradient(180deg,#EDE7FF 0%, #D4CCFF 100%); }
+  .glass-nav { background: rgba(255,255,255,0.65); color:#111; box-shadow: var(--shadow); }
+  .input-card { background: var(--card-bg-light); color:#111; border: 1px solid rgba(10,10,10,0.04); }
+  .result-card { background: white; color:#111; }
+  .nav-link { color:#333; }
+}
+@media (prefers-color-scheme: dark) {
+  body { background: linear-gradient(180deg,#0E061A 0%, #2D1D45 100%); }
+  .glass-nav { background: rgba(255,255,255,0.04); color:#eee; backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+  .input-card { background: var(--card-bg-dark); color:#eee; border: 1px solid rgba(255,255,255,0.03); }
+  .result-card { background: rgba(255,255,255,0.02); color:#fff; }
+  .nav-link { color:#ddd; }
+}
+
+/* layout container */
+.main-container { max-width: 1100px; margin: 22px auto; padding: 18px; }
+
+/* glass nav */
+.glass-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; border-radius:999px; margin-bottom:18px;
+}
+.nav-left { display:flex; gap:18px; align-items:center; font-size:14px; }
+.nav-right { display:flex; gap:12px; align-items:center; }
+.start-pill {
+  border-radius:999px; padding:6px 14px; font-weight:600; border:1.5px solid rgba(168,85,255,0.85);
+  background: transparent;
+}
+
+/* hero */
+.hero { display:flex; gap:24px; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.hero-left { flex:1; min-width:260px; }
+.hero-right { width:320px; display:flex; gap:14px; flex-direction:column; align-items:center; }
+
+/* profile ring */
+.profile-ring { width:110px; height:110px; border-radius:999px; display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 10px 30px rgba(168,85,255,0.12); border: 2px solid rgba(168,85,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+}
+
+/* title */
+.hero-title { font-size:30px; font-weight:700; line-height:1.05; margin-bottom:6px;
+  background: linear-gradient(90deg,#A855FF,#FF7AE5); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:0.4px;
+}
+.hero-sub { font-size:15px; color:var(--muted-light); margin-bottom:12px; }
+
+/* features */
+.feature-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.feature-badge { padding:8px 12px; border-radius:999px; font-size:13px; display:flex; gap:8px; align-items:center;
+  backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(10,10,10,0.06);
+}
+
+/* side cards */
+.side-card { width:100%; padding:12px; border-radius:12px; text-align:center; box-shadow: 0 8px 26px rgba(11,7,28,0.10); }
+
+/* input area */
+.form-area { margin-top:18px; display:flex; flex-direction:column; gap:18px; align-items:center; }
+.inputs-grid { display:grid; gap:14px; grid-template-columns: repeat(3,1fr); width:100%; }
+.row-2 { display:grid; gap:14px; grid-template-columns: repeat(2,1fr); width:70%; margin: 0 auto; }
+
+/* input card */
+.input-card { padding:12px; border-radius:14px; display:flex; flex-direction:column; gap:8px; }
+.input-label { font-size:12px; color:var(--label-neon); margin-bottom:6px; }
+.input-row { display:flex; align-items:center; gap:8px; }
+.input-emoji { font-size:16px; width:22px; text-align:center; }
+
+/* custom input style for number fields to show glow on focus */
+.neon-input input[type="number"], .neon-input select {
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid transparent; outline:none;
+  background: transparent; color:inherit; font-size:15px;
+}
+.neon-input input[type="number"]::-webkit-outer-spin-button,
+.neon-input input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* focus */
+.neon-input:focus-within { box-shadow: 0 6px 28px rgba(168,85,255,0.14); border-radius:12px; }
+
+/* unit text on right */
+.unit-text { font-size:13px; color:inherit; opacity:0.9; }
+
+/* submit button */
+.cta-row { margin-top:8px; display:flex; justify-content:center; }
+.cta-btn {
+  background: linear-gradient(90deg,#9C5CFF,#FF77D4); color:white; padding:12px 28px; border-radius:999px; border:none;
+  font-weight:700; box-shadow: 0 12px 36px rgba(183,132,255,0.12); cursor:pointer;
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 18px 46px rgba(183,132,255,0.22); }
+
+/* result card */
+.result-card {
+  margin-top:12px; padding:14px 18px; border-radius:12px; display:flex; gap:12px; align-items:center; justify-content:center;
+  box-shadow: 0 12px 36px rgba(168,85,255,0.08);
+}
+
+@media (max-width:900px) {
+  .hero { flex-direction:column; align-items:flex-start; gap:14px; }
+  .inputs-grid { grid-template-columns: 1fr; width:100%; }
+  .row-2 { grid-template-columns: 1fr; width:100%; }
+  .hero-title { font-size:24px; }
+  .profile-ring { width:88px; height:88px; }
+}
+</style>
+"""
+
+st.markdown(CSS, unsafe_allow_html=True)
+
+# -------------------------
+# Helper: model loader
+# -------------------------
+def load_model(path):
+    try:
+        with open(path, "rb") as f:
+            model = pickle.load(f)
+        return model
+    except FileNotFoundError:
+        return None
+    except Exception:
+        return None
+
+# -------------------------
+# Simple router using session_state
+# -------------------------
 if "page" not in st.session_state:
     st.session_state.page = "landing"
 
-def goto_main():
+def go_main():
     st.session_state.page = "main"
 
-# ---------------------------
-# Landing Page (Page 1)
-# ---------------------------
+# -------------------------
+# Landing Page (premium AIVA)
+# -------------------------
 def render_landing():
-    st.title("Spark Your Creativity with AI")
-    st.markdown("**Unleash your content genius — AnemiaSense**")
-    st.write("")  # spacing
-    if st.button("Start", key="start_btn"):
-        goto_main()
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# ---------------------------
-# Validation helpers
-# ---------------------------
-def positive_number(value):
-    try:
-        val = float(value)
-        return val >= 0
-    except Exception:
-        return False
+    # Glass nav
+    st.markdown('<div class="glass-nav"><div class="nav-left">'
+                '<div style="font-weight:700;">AnemiaSense</div>'
+                '<div class="nav-link">Home</div>'
+                '<div class="nav-link">About Project</div>'
+                '<div class="nav-link">How it works</div>'
+                '<div class="nav-link">Model Info</div>'
+                '<div class="nav-link">Contact</div>'
+                '</div><div class="nav-right">'
+                '<div class="start-pill">Start</div>'
+                '</div></div>', unsafe_allow_html=True)
 
-def load_model(path: str):
-    with open(path, "rb") as f:
-        return pickle.load(f)
+    # Hero section
+    st.markdown('<div class="hero"><div class="hero-left">', unsafe_allow_html=True)
+    st.markdown('<div class="profile-ring"><div style="width:84px;height:84px;border-radius:999px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));"></div></div>', unsafe_allow_html=True)
+    st.markdown('</div><div class="hero-right">', unsafe_allow_html=True)
 
-# ---------------------------
-# Main Page (Page 2) — Anemia Prediction Form
-# ---------------------------
+    # Title and subtitle (right aligned area for visual balance)
+    st.markdown('<div style="text-align:left;"><div class="hero-title">Hi, I\'m AnemiaSense — Your AI-Powered Health Assistant</div>'
+                '<div class="hero-sub">Check your blood parameters and detect anemia risk instantly — powered by machine learning and modern health analytics.</div>'
+                '</div>', unsafe_allow_html=True)
+
+    # Feature badges
+    st.markdown('<div class="feature-row">'
+                '<div class="feature-badge">⚡&nbsp;<div style="font-size:13px">Fast Detection</div></div>'
+                '<div class="feature-badge">🧬&nbsp;<div style="font-size:13px">ML-Based Analysis</div></div>'
+                '<div class="feature-badge">📊&nbsp;<div style="font-size:13px">Clear Visualization</div></div>'
+                '<div class="feature-badge">🔐&nbsp;<div style="font-size:13px">Secure & Private</div></div>'
+                '</div>', unsafe_allow_html=True)
+
+    # CTA
+    if st.button("Start Anemia Check", key="landing_cta"):
+        go_main()
+
+    st.markdown('</div></div>', unsafe_allow_html=True)  # close hero
+    st.markdown('</div>', unsafe_allow_html=True)  # close container
+
+# -------------------------
+# Main Page (inputs + predict)
+# -------------------------
 def render_main():
-    st.header("Anemia Prediction")
-    st.write("Enter blood parameter values below and click **Predict Anemia**.")
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    st.markdown('<h2 style="margin:6px 0 2px 0;">Anemia Prediction</h2>', unsafe_allow_html=True)
+    st.markdown('<div style="color:var(--muted-light); margin-bottom:8px;">Enter the blood parameters below and click Predict Anemia.</div>', unsafe_allow_html=True)
 
-    # Layout: create two columns for inputs to keep them compact
-    num_features = len(FEATURE_COLUMNS)
-    cols_per_row = 2
-    input_values = {}
+    # Load model once (if present)
+    model = load_model(MODEL_FILENAME)
+    model_available = model is not None
 
-    # Gender input handled specially
-    if "gender" not in FEATURE_COLUMNS:
-        st.error("Configuration error: 'gender' must be present in FEATURE_COLUMNS as the first feature.")
-        return
+    # Input grid (3 on top)
+    st.markdown('<div class="form-area">', unsafe_allow_html=True)
+    st.markdown('<div class="inputs-grid">', unsafe_allow_html=True)
 
-    # First row: gender + first numeric feature (if exists)
-    st.subheader("Patient Parameters")
-    # Build input widgets dynamically in two-column rows
-    for i in range(0, num_features, cols_per_row):
-        cols = st.columns(cols_per_row)
-        for col_index in range(cols_per_row):
-            idx = i + col_index
-            if idx >= num_features:
-                # fill empty space if odd number of fields
-                cols[col_index].empty()
-                continue
-            feature = FEATURE_COLUMNS[idx]
-            # Render gender as selectbox (0 or 1)
-            if feature.lower() == "gender":
-                val = cols[col_index].selectbox(
-                    "Gender",
-                    options=[0, 1],
-                    format_func=lambda x: "Male (0)" if x == 0 else "Female (1)",
-                    help="Select 0 for Male, 1 for Female",
-                    key="gender_input"
-                )
-                input_values["gender"] = int(val)
-            else:
-                # Generic numeric input
-                # Provide placeholder examples for common names
-                placeholder_map = {
-                    "hemoglobin": "e.g., 13.5 (g/dL)",
-                    "mch": "e.g., 22.7",
-                    "mchc": "e.g., 29.1",
-                    "mcv": "e.g., 83.7",
-                    "rbc": "e.g., 4.5",
-                    "wbc": "e.g., 7.1",
-                    "platelets": "e.g., 250",
-                    "pcv": "e.g., 40"
-                }
-                ph = placeholder_map.get(feature.lower(), "")
-                # use number_input for numeric validation and consistent UI
-                # default to 0.0 for floats; allow step=0.1 for medical values
-                # For large integers like platelets, user can type appropriate number
-                try:
-                    default = 0.0
-                    step = 0.1
-                    if feature.lower() in ["platelets", "rbc", "wbc"]:
-                        # platelets often integer; rbc/wbc often floats
-                        step = 0.1
-                    value = cols[col_index].number_input(
-                        label=feature.replace("_", " ").title(),
-                        min_value=0.0,
-                        value=default,
-                        step=step,
-                        format="%.2f",
-                        help=ph,
-                        key=f"inp_{feature}"
-                    )
-                    input_values[feature] = float(value)
-                except Exception:
-                    # fallback: text input (should not occur)
-                    v = cols[col_index].text_input(feature.replace("_", " ").title(), key=f"txt_{feature}")
-                    input_values[feature] = float(v) if v.strip() != "" else 0.0
+    # Box 1 - Gender
+    st.markdown('<div class="input-card input-card" style="min-height:88px;">', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">👤 Gender</div>', unsafe_allow_html=True)
+    gender = st.selectbox("", options=[0, 1], format_func=lambda x: "Male (0)" if x == 0 else "Female (1)", key="gender_select")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.write("")  # spacer
+    # Box 2 - Hemoglobin
+    st.markdown('<div class="input-card input-card neon-input">', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">🩸 Hemoglobin <span style="font-size:12px;color:var(--label-neon)">(g/dL)</span></div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([5,1])
+    with col1:
+        hemoglobin = st.number_input("", min_value=0.0, format="%.2f", value=13.50, key="hemoglobin")
+    with col2:
+        st.markdown('<div class="unit-text">g/dL</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Predict button
-    predict_clicked = st.button("Predict Anemia", key="predict_btn")
+    # Box 3 - MCH
+    st.markdown('<div class="input-card input-card neon-input">', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">🧬 MCH</div>', unsafe_allow_html=True)
+    mch = st.number_input("", min_value=0.0, format="%.2f", value=22.70, key="mch")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Result area
-    result_area = st.empty()
+    st.markdown('</div>', unsafe_allow_html=True)  # end inputs-grid
 
-    if predict_clicked:
-        # Validate inputs
+    # Second row (2 boxes)
+    st.markdown('<div class="row-2">', unsafe_allow_html=True)
+
+    # Box 4 - MCHC
+    st.markdown('<div class="input-card input-card neon-input">', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">⚗️ MCHC</div>', unsafe_allow_html=True)
+    mchc = st.number_input("", min_value=0.0, format="%.2f", value=29.10, key="mchc")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Box 5 - MCV
+    st.markdown('<div class="input-card input-card neon-input">', unsafe_allow_html=True)
+    st.markdown('<div class="input-label">📊 MCV</div>', unsafe_allow_html=True)
+    mcv = st.number_input("", min_value=0.0, format="%.2f", value=83.70, key="mcv")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)  # end row-2
+
+    # Submit CTA
+    st.markdown('<div class="cta-row">', unsafe_allow_html=True)
+    disabled = not model_available
+    if disabled:
+        st_button = st.button("Predict Anemia", key="predict_btn", disabled=True)
+    else:
+        st_button = st.button("Predict Anemia", key="predict_btn")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Result area placeholder
+    result_placeholder = st.empty()
+
+    # Validation & Predict flow
+    if st_button:
         errors = []
-        # gender must be exactly 0 or 1
-        g = input_values.get("gender", None)
-        if g not in (0, 1):
+        # gender validation
+        if gender not in (0, 1):
             errors.append("Gender must be 0 (Male) or 1 (Female).")
-
-        # Validate all numeric features are non-negative numbers
-        for feat, val in input_values.items():
-            if feat == "gender":
-                continue
+        # numeric validations
+        numeric_fields = {"Hemoglobin": hemoglobin, "MCH": mch, "MCHC": mchc, "MCV": mcv}
+        for name, val in numeric_fields.items():
             try:
-                num = float(val)
-                if num < 0:
-                    errors.append(f"{feat.replace('_',' ').title()} must be a non-negative number.")
+                v = float(val)
+                if v < 0:
+                    errors.append(f"{name} must be non-negative.")
             except Exception:
-                errors.append(f"{feat.replace('_',' ').title()} must be a valid number.")
-
+                errors.append(f"{name} must be a number.")
         if errors:
             for e in errors:
-                result_area.error(e)
-            return
+                result_placeholder.error(e)
+        else:
+            # Prepare input vector in FEATURE_ORDER
+            mapping = {"gender": gender, "hemoglobin": hemoglobin, "mch": mch, "mchc": mchc, "mcv": mcv}
+            try:
+                feature_vector = [float(mapping.get(f, 0.0)) for f in FEATURE_ORDER]
+            except Exception as ex:
+                result_placeholder.error("Failed to prepare features: " + str(ex))
+                st.stop()
 
-        # Prepare input array for model: ensure order matches FEATURE_COLUMNS
-        try:
-            feature_vector = [float(input_values[f]) if f in input_values else 0.0 for f in FEATURE_COLUMNS]
             arr = np.array(feature_vector, dtype=float).reshape(1, -1)
-        except Exception as ex:
-            result_area.error("Failed to prepare input vector: " + str(ex))
-            return
-
-        # Load model and predict
-        try:
-            model = load_pickle_model(MODEL_FILENAME)
-        except FileNotFoundError:
-            result_area.error(f"Model file '{MODEL_FILENAME}' not found in project root. Place the trained model at this path.")
-            return
-        except Exception as ex:
-            result_area.error("Failed to load model: " + str(ex))
-            return
-
-        # Model prediction
-        try:
-            pred = model.predict(arr)
-            # predict may return array
-            label = int(pred[0]) if hasattr(pred, "__iter__") else int(pred)
-            # Optionally show probability if available
-            prob_text = ""
-            if hasattr(model, "predict_proba"):
-                try:
-                    proba = model.predict_proba(arr)
-                    # If binary, take proba for class 1
-                    p = float(proba[0][1]) if proba.shape[1] > 1 else float(proba[0][0])
-                    prob_text = f" (risk score: {p:.2f})"
-                except Exception:
-                    prob_text = ""
-            if label == 0:
-                result_area.success("No Anemia detected." + prob_text)
+            # Load model again just before predict (ensures latest)
+            model = load_model(MODEL_FILENAME)
+            if model is None:
+                result_placeholder.error(f"Model file '{MODEL_FILENAME}' not found or failed to load. Place model in project root.")
             else:
-                result_area.error("Anemia detected." + prob_text)
-        except Exception as ex:
-            result_area.error("Prediction failed: " + str(ex))
+                try:
+                    pred = model.predict(arr)
+                    label = int(pred[0]) if hasattr(pred, "__iter__") else int(pred)
+                    prob_text = ""
+                    if hasattr(model, "predict_proba"):
+                        try:
+                            proba = model.predict_proba(arr)
+                            if proba.shape[1] > 1:
+                                p = float(proba[0][1])
+                                prob_text = f" • Risk: {p*100:.1f}%"
+                        except Exception:
+                            prob_text = ""
+                    if label == 0:
+                        # No anemia
+                        result_placeholder.markdown(
+                            f'<div class="result-card" style="border:1px solid rgba(0,255,0,0.06)"><div style="font-size:20px">💡 Result: No Anemia Detected</div><div style="margin-left:8px;color:var(--label-neon);font-size:13px">{prob_text}</div></div>',
+                            unsafe_allow_html=True)
+                    else:
+                        result_placeholder.markdown(
+                            f'<div class="result-card" style="border:1px solid rgba(255,100,100,0.06)"><div style="font-size:20px">💜 Result: Anemia Detected</div><div style="margin-left:8px;color:var(--label-neon);font-size:13px">{prob_text}</div></div>',
+                            unsafe_allow_html=True)
+                except Exception as ex:
+                    result_placeholder.error("Prediction failed: " + str(ex))
 
-# ---------------------------
-# Minimal helper to load model with clear error semantics
-# ---------------------------
-def load_pickle_model(path: str):
-    try:
-        with open(path, "rb") as f:
-            return pickle.load(f)
-    except FileNotFoundError:
-        raise
-    except Exception as e:
-        # propagate other errors
-        raise
+    # Show model missing notice if disabled
+    if not model_available:
+        st.warning(f"Model file '{MODEL_FILENAME}' not found in project root. Prediction is disabled until a trained model file with the name is provided.")
 
-# ---------------------------
+    # Footer
+    st.markdown('<div style="text-align:center; margin-top:18px; color:var(--label-neon); font-size:13px;">Developed by Kartvaya Raikwar</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)  # close main container
+
+# -------------------------
 # Router
-# ---------------------------
+# -------------------------
 if st.session_state.page == "landing":
     render_landing()
-elif st.session_state.page == "main":
-    render_main()
 else:
-    # fallback safety
-    st.session_state.page = "landing"
-    render_landing()
+    render_main()
