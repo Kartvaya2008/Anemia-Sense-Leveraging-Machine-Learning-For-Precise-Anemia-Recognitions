@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <body>
+        <h1>This is my first Heading in HTML</h1>
+        <h2>This is my second Heading in HTML</h2>
+        <h3>This is my third Heading in HTML</h3>
+        <h4>This is my fourth Heading in HTML</h4>
+        <h5>This is my fifth Heading in HTML</h5>
+        <h6>This is my sixth Heading in HTML</h6>
+
+        <p>This is my first paragraph in HTML</p>
+
+        <a href="https://www.youtube.com">chark here</a>
+
+        <ul>
+            <li>Maggi</li>
+            <li>Kurkure</li>
+            <li>lays</li>
+            
+        </ul>
+    </body>
+</html>
