@@ -4,406 +4,738 @@ import streamlit as st
 import os
 import time
 
+# ---------- PAGE CONFIG ----------
 st.set_page_config(
-    page_title="GlucoSense AI | Diabetes Risk Assessment",
-    page_icon="🩺",
+    page_title="AnemiaCheck · Clinical Screening",
+    page_icon="🩸",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
 
+/* ── TOKENS ──────────────────────────────────────────────── */
 :root {
-    --bg:      #050d1a;
-    --card:    rgba(255,255,255,0.035);
-    --border:  rgba(255,255,255,0.08);
-    --teal:    #38bdf8;
-    --cyan:    #22d3ee;
-    --green:   #34d399;
-    --rose:    #fb7185;
-    --t1:      #f0f6ff;
-    --t2:      #94a3b8;
-    --t3:      #4e6280;
-    --r-lg:    20px;
-    --r-md:    14px;
-    --r-sm:    10px;
+    --black:         #0a0a0b;
+    --surface:       #111113;
+    --surface-2:     #18181b;
+    --surface-3:     #1f1f23;
+    --card-white:    rgba(255,255,255,0.97);
+    --card-ghost:    rgba(255,255,255,0.04);
+    --card-ghost-hv: rgba(255,255,255,0.07);
+    --border:        rgba(255,255,255,0.08);
+    --border-mid:    rgba(255,255,255,0.14);
+    --border-white:  rgba(255,255,255,0.85);
+    --text-white:    #f5f5f7;
+    --text-gray:     #8e8e93;
+    --text-dim:      #48484e;
+    --text-black:    #0a0a0b;
+    --text-dark:     #1c1c1e;
+    --green-muted:   #4ade80;
+    --green-bg:      rgba(74,222,128,0.10);
+    --green-border:  rgba(74,222,128,0.25);
+    --red-muted:     #f87171;
+    --red-bg:        rgba(248,113,113,0.10);
+    --red-border:    rgba(248,113,113,0.25);
+    --shadow-card:   0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-white:  0 2px 12px rgba(255,255,255,0.06), 0 1px 0 rgba(255,255,255,0.08) inset;
+    --shadow-hover:  0 2px 4px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.5);
+    --r-xl:          20px;
+    --r-lg:          14px;
+    --r-md:          10px;
+    --r-sm:          7px;
 }
 
-html,body,[data-testid="stAppViewContainer"] {
-    background: var(--bg) !important;
-    color: var(--t1) !important;
-    font-family: 'DM Sans', sans-serif !important;
+/* ── GLOBAL ───────────────────────────────────────────────── */
+html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+    font-family: 'Instrument Sans', -apple-system, sans-serif !important;
+    color: var(--text-white) !important;
 }
-[data-testid="stAppViewContainer"] > .main { background: var(--bg) !important; }
+.stApp, [data-testid="stAppViewContainer"], .main {
+    background: var(--black) !important;
+}
 [data-testid="stHeader"] {
-    background: rgba(5,13,26,0.85) !important;
-    backdrop-filter: blur(20px) !important;
+    background: rgba(10,10,11,0.9) !important;
+    backdrop-filter: blur(16px) !important;
     border-bottom: 1px solid var(--border) !important;
 }
+#MainMenu, footer { visibility: hidden; }
+.block-container { padding-top: 2.2rem !important; max-width: 1280px; }
+
+/* ── SIDEBAR ──────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg,#060f1e 0%,#0a1628 100%) !important;
+    background: var(--surface) !important;
     border-right: 1px solid var(--border) !important;
 }
-[data-testid="stSidebar"] * { color: var(--t2) !important; font-family:'DM Sans',sans-serif !important; }
+[data-testid="stSidebar"] > div:first-child { padding-top: 2rem; }
+[data-testid="stSidebar"] * { color: var(--text-gray) !important; }
 
-.stNumberInput [data-baseweb="input"] {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--r-sm) !important;
-    transition: border-color .25s, box-shadow .25s !important;
+/* ── INPUTS ───────────────────────────────────────────────── */
+[data-testid="stNumberInput"] [data-baseweb="input"] {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: var(--r-md) !important;
+    transition: border-color .2s, box-shadow .2s !important;
 }
-.stNumberInput [data-baseweb="input"]:focus-within {
-    border-color: var(--teal) !important;
-    box-shadow: 0 0 0 3px rgba(56,189,248,.15) !important;
+[data-testid="stNumberInput"] [data-baseweb="input"]:focus-within {
+    border-color: rgba(255,255,255,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.06) !important;
 }
-.stNumberInput input { color: var(--t1) !important; background: transparent !important; }
-.stNumberInput label,.stSlider label {
-    color: var(--t2) !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
+[data-testid="stNumberInput"] input {
+    color: var(--text-white) !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 14px !important;
+    background: transparent !important;
 }
+[data-testid="stNumberInput"] label {
+    color: var(--text-gray) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: .04em !important;
+}
+[data-baseweb="input"] svg { fill: var(--text-dim) !important; }
 
+/* ── BUTTON ───────────────────────────────────────────────── */
 .stButton > button {
-    background: linear-gradient(135deg,#0ea5e9 0%,#6366f1 100%) !important;
-    color: #fff !important;
-    font-family: 'Syne',sans-serif !important;
+    width: 100% !important;
+    background: var(--text-white) !important;
+    color: var(--text-black) !important;
+    font-family: 'Instrument Sans', sans-serif !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
-    font-size: 15px !important;
-    letter-spacing: .06em !important;
+    letter-spacing: .08em !important;
     text-transform: uppercase !important;
     border: none !important;
-    border-radius: var(--r-md) !important;
-    padding: 14px 32px !important;
-    width: 100% !important;
-    transition: all .3s cubic-bezier(.34,1.56,.64,1) !important;
-    box-shadow: 0 8px 32px rgba(14,165,233,.35) !important;
+    border-radius: var(--r-lg) !important;
+    padding: 0.85rem 2rem !important;
+    cursor: pointer !important;
+    transition: all .25s cubic-bezier(.34,1.56,.64,1) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 16px rgba(255,255,255,0.1) !important;
 }
 .stButton > button:hover {
-    transform: translateY(-3px) scale(1.02) !important;
-    box-shadow: 0 16px 48px rgba(14,165,233,.55) !important;
-    filter: brightness(1.1) !important;
+    background: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4), 0 12px 32px rgba(255,255,255,0.18) !important;
 }
 .stButton > button:active { transform: translateY(0) scale(.98) !important; }
 
+/* ── PROGRESS ─────────────────────────────────────────────── */
 .stProgress > div > div > div > div {
-    background: linear-gradient(90deg,var(--teal),var(--cyan)) !important;
+    background: linear-gradient(90deg,#e5e5e7,#ffffff) !important;
     border-radius: 99px !important;
 }
 .stProgress > div > div > div {
-    background: rgba(255,255,255,.06) !important;
+    background: rgba(255,255,255,0.08) !important;
     border-radius: 99px !important;
+    height: 8px !important;
 }
 
-hr { border-color: var(--border) !important; margin: 2rem 0 !important; }
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+/* ── SPINNER ──────────────────────────────────────────────── */
+.stSpinner > div { border-top-color: var(--text-white) !important; }
 
-@keyframes fadeUp { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }
-@keyframes pulseRing {
-    0%,100%{box-shadow:0 0 0 3px rgba(14,165,233,.25),0 0 32px rgba(14,165,233,.35)}
-    50%{box-shadow:0 0 0 10px rgba(14,165,233,.08),0 0 48px rgba(14,165,233,.5)}
+/* ── SCROLLBAR ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+
+/* ── DIVIDER ──────────────────────────────────────────────── */
+hr { border-color: var(--border) !important; margin: 1.8rem 0 !important; }
+
+/* ── ANIMATIONS ───────────────────────────────────────────── */
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(14px); }
+    to   { opacity:1; transform:translateY(0);    }
 }
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes resultIn {
-    from{opacity:0;transform:translateY(24px)}
-    to{opacity:1;transform:translateY(0)}
+@keyframes scaleIn {
+    from { opacity:0; transform:scale(.94); }
+    to   { opacity:1; transform:scale(1);   }
+}
+@keyframes pulseDot {
+    0%,100% { opacity:1; }
+    50%      { opacity:.4; }
 }
 
-.gs-header{display:flex;align-items:center;gap:20px;padding:0 0 2rem 0;animation:fadeUp .5s .05s both}
-.gs-logo{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;animation:pulseRing 3s ease-in-out infinite}
-.gs-h1{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;line-height:1.1;background:linear-gradient(90deg,#f0f6ff,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.gs-sub{font-size:15px;color:var(--t2);margin:0}
-.gs-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:10px;background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.25)}
-.gs-badge::before{content:'';width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite}
+/* ══════════════════════════════════════════════════════════
+   CUSTOM COMPONENTS
+══════════════════════════════════════════════════════════ */
 
-.gs-metric{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:20px;text-align:center;transition:all .3s ease;animation:fadeUp .5s .2s both}
-.gs-metric:hover{background:rgba(255,255,255,.06);border-color:rgba(56,189,248,.25);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.35)}
-.gs-m-ico{font-size:26px;margin-bottom:8px}
-.gs-m-lbl{font-size:11px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
-.gs-m-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--t1);margin:4px 0 2px}
+/* HERO */
+.hero {
+    background: var(--card-white);
+    border-radius: var(--r-xl);
+    padding: 2.4rem 2.8rem;
+    margin-bottom: 1.8rem;
+    box-shadow: var(--shadow-white);
+    animation: fadeUp .45s ease both;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content:'';
+    position:absolute; top:0; right:0;
+    width:280px; height:280px;
+    background: radial-gradient(circle at 80% 20%, rgba(0,0,0,0.03) 0%, transparent 70%);
+    pointer-events:none;
+}
+.hero-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--black);
+    color: var(--text-white);
+    border-radius: 99px;
+    padding: 5px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+}
+.hero-dot {
+    width:6px; height:6px; border-radius:50%;
+    background: #4ade80;
+    animation: pulseDot 2s ease-in-out infinite;
+}
+.hero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(30px,4vw,48px);
+    font-weight: 400;
+    color: var(--text-black);
+    line-height: 1.1;
+    margin: 0 0 .6rem;
+    letter-spacing: -.02em;
+}
+.hero-title em {
+    font-style: italic;
+    color: #3c3c43;
+}
+.hero-sub {
+    font-size: 15px;
+    color: #636366;
+    margin: 0;
+    max-width: 500px;
+    line-height: 1.65;
+}
 
-.gs-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);backdrop-filter:blur(12px);transition:border-color .3s,box-shadow .3s;margin-bottom:16px;animation:fadeUp .5s .3s both}
-.gs-card:hover{border-color:rgba(56,189,248,.2);box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06),0 0 40px rgba(56,189,248,.12)}
-.gs-card-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--teal);letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.gs-card-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+/* METRIC CARDS */
+.mc-wrap {
+    background: var(--card-ghost);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.2rem 1rem;
+    text-align: center;
+    transition: background .2s, box-shadow .2s, transform .2s;
+    animation: fadeUp .45s .1s ease both;
+    cursor: default;
+}
+.mc-wrap:hover {
+    background: var(--card-ghost-hv);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--border-mid);
+}
+.mc-icon { font-size: 22px; margin-bottom: 6px; }
+.mc-val  {
+    font-family: 'DM Mono', monospace;
+    font-size: 19px; font-weight: 500;
+    color: var(--text-white); display: block;
+}
+.mc-lbl  {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-dim); margin-top: 3px;
+}
 
-.gs-grp{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;padding:6px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.gs-tip{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.15);border-left:3px solid var(--teal);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--t2);line-height:1.6;margin-top:16px}
-.gs-sep{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:28px 0}
+/* FORM CARD */
+.form-card {
+    background: var(--card-ghost);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 2rem 2rem 1.6rem;
+    box-shadow: var(--shadow-card);
+    animation: fadeUp .45s .15s ease both;
+    margin-bottom: 1.2rem;
+    transition: border-color .25s;
+}
+.form-card:hover { border-color: var(--border-mid); }
 
-.gs-result{border-radius:var(--r-lg);padding:36px;text-align:center;animation:resultIn .6s cubic-bezier(.16,1,.3,1) both}
-.gs-result-bad{background:linear-gradient(135deg,rgba(251,113,133,.12),rgba(244,63,94,.06));border:1px solid rgba(251,113,133,.3);box-shadow:0 0 60px rgba(251,113,133,.1),inset 0 1px 0 rgba(255,255,255,.05)}
-.gs-result-good{background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(16,185,129,.06));border:1px solid rgba(52,211,153,.3);box-shadow:0 0 60px rgba(52,211,153,.1),inset 0 1px 0 rgba(255,255,255,.05)}
-.gs-r-ico{font-size:56px;margin-bottom:14px}
-.gs-r-title{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
-.gs-r-bad{color:var(--rose)}
-.gs-r-good{color:var(--green)}
-.gs-r-sub{font-size:15px;color:var(--t2);max-width:420px;margin:0 auto;line-height:1.7}
-.gs-conf-row{display:flex;justify-content:space-between;font-size:12px;color:var(--t2);font-weight:600;letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase}
-.gs-conf-pct{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--teal)}
+.section-head {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.4rem;
+    display: flex; align-items: center; gap: 10px;
+}
+.section-head::after {
+    content:''; flex:1; height:1px;
+    background: var(--border);
+}
+.field-lbl {
+    font-size: 12px; font-weight: 600;
+    color: var(--text-gray);
+    letter-spacing: .04em;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 5px;
+}
 
-.gs-sum-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px;transition:all .25s ease}
-.gs-sum-item:hover{background:rgba(255,255,255,.055);border-color:rgba(56,189,248,.2);transform:translateY(-2px)}
-.gs-sum-ico{font-size:20px;margin-bottom:4px}
-.gs-sum-lbl{font-size:10px;color:#4e6280;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.gs-sum-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#f0f6ff;margin-top:4px}
+/* SUMMARY CARD */
+.sum-card {
+    background: var(--card-ghost);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 1.8rem 1.8rem 1.4rem;
+    animation: fadeUp .45s .2s ease both;
+    margin-bottom: 1.2rem;
+}
+.sum-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: .42rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.sum-row:last-child { border-bottom: none; }
+.sum-key { font-size:13px; color: var(--text-gray); }
+.sum-val {
+    font-family:'DM Mono',monospace; font-size:13px;
+    color: var(--text-white);
+}
 
-.gs-footer{text-align:center;padding:32px 0 16px;border-top:1px solid var(--border);margin-top:40px}
-.gs-footer-brand{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--t2)}
-.gs-footer-hl{background:linear-gradient(90deg,var(--teal),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.gs-footer-sub{font-size:12px;color:var(--t3);margin-top:6px}
+/* AWAITING */
+.await-box {
+    background: var(--card-ghost);
+    border: 1px dashed var(--border-mid);
+    border-radius: var(--r-xl);
+    padding: 2.8rem 2rem;
+    text-align: center;
+    animation: fadeUp .45s .25s ease both;
+}
+.await-icon { font-size:42px; margin-bottom:.9rem; opacity:.5; }
+.await-title { font-size:15px; font-weight:600; color:var(--text-gray); margin-bottom:.4rem; }
+.await-sub   { font-size:13px; color:var(--text-dim); line-height:1.6; }
+.await-cta   { color: var(--text-white); font-weight:600; }
 
-.sb-logo{display:flex;align-items:center;gap:10px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:24px}
-.sb-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#f0f6ff !important}
-.sb-sec{margin-bottom:28px}
-.sb-h{font-size:10px !important;letter-spacing:.14em !important;text-transform:uppercase !important;color:rgba(148,163,184,.4) !important;font-weight:700 !important;margin-bottom:10px !important;display:block}
-.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:3px;font-size:14px !important;color:#94a3b8 !important;cursor:default;transition:background .2s}
-.sb-item:hover{background:rgba(255,255,255,.05)}
-.sb-stat{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px !important;color:#64748b !important}
-.sb-sv{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#38bdf8 !important}
+/* RESULT */
+.result-wrap {
+    border-radius: var(--r-xl);
+    padding: 2rem 1.8rem;
+    text-align: center;
+    animation: scaleIn .45s cubic-bezier(.34,1.56,.64,1) both;
+    margin-bottom: 1rem;
+}
+.result-risk {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+}
+.result-clear {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+}
+.result-ico  { font-size:48px; margin-bottom:.7rem; }
+.result-lbl  {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px; font-weight: 400;
+    letter-spacing: -.01em;
+    margin-bottom: .35rem;
+}
+.result-risk  .result-lbl  { color: var(--red-muted); }
+.result-clear .result-lbl  { color: var(--green-muted); }
+.result-desc { font-size:14px; color:var(--text-gray); line-height:1.6; }
+
+/* CONFIDENCE */
+.conf-card {
+    background: var(--card-ghost);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1.4rem 1.6rem;
+    animation: fadeUp .35s ease both;
+    margin-bottom: .9rem;
+}
+.conf-head {
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:.7rem;
+}
+.conf-title {
+    font-size:10px; font-weight:700;
+    letter-spacing:.14em; text-transform:uppercase;
+    color: var(--text-dim);
+}
+.conf-pct {
+    font-family:'DM Mono',monospace;
+    font-size:22px; font-weight:500;
+    color: var(--text-white);
+}
+.conf-badge {
+    display:inline-block;
+    font-size:10px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase;
+    border-radius:99px; padding:3px 12px;
+    margin-top:.7rem;
+}
+.conf-high   { color:#4ade80; background:rgba(74,222,128,.1); border:1px solid rgba(74,222,128,.22); }
+.conf-mid    { color:#fbbf24; background:rgba(251,191,36,.1);  border:1px solid rgba(251,191,36,.22); }
+.conf-low    { color:#f87171; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.22); }
+
+/* DISCLAIMER */
+.disclaimer {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: .75rem 1rem;
+    font-size: 11px; color: var(--text-dim); line-height: 1.65;
+}
+
+/* SIDEBAR */
+.sb-logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px; font-weight: 400;
+    color: var(--text-white) !important;
+    letter-spacing: -.01em;
+    margin-bottom: .2rem;
+}
+.sb-tag {
+    font-size:10px; font-weight:700;
+    letter-spacing:.14em; text-transform:uppercase;
+    color: var(--text-dim) !important;
+    margin-bottom: 1.6rem;
+}
+.sb-online {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:600;
+    color: #4ade80 !important;
+    letter-spacing:.06em; text-transform:uppercase;
+}
+.sb-pulse {
+    width:7px; height:7px; border-radius:50%;
+    background:#4ade80;
+    box-shadow:0 0 6px #4ade80;
+    animation: pulseDot 2s ease-in-out infinite;
+    display:inline-block;
+}
+.sb-divider { height:1px; background:var(--border); margin:1.4rem 0; }
+.sb-section-h {
+    font-size:9px !important; font-weight:700 !important;
+    letter-spacing:.18em !important; text-transform:uppercase !important;
+    color: var(--text-dim) !important;
+    margin-bottom:.9rem !important;
+    display:block;
+}
+.sb-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.5rem 0; border-bottom:1px solid var(--border);
+    font-size:13px !important;
+}
+.sb-item:last-child { border-bottom:none; }
+.sb-item-k { color:var(--text-gray) !important; }
+.sb-item-v {
+    font-family:'DM Mono',monospace; font-size:11px !important;
+    color:var(--text-white) !important;
+    background:var(--surface-3);
+    border:1px solid var(--border-mid);
+    border-radius:5px; padding:2px 8px;
+}
+.sb-tip {
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid rgba(255,255,255,0.15);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    padding: .85rem .95rem;
+    font-size:12px !important; color:var(--text-dim) !important;
+    line-height:1.65 !important;
+    margin-top:.9rem;
+}
+
+/* FOOTER */
+.footer {
+    text-align:center;
+    padding: 2.5rem 1rem 1.5rem;
+    border-top:1px solid var(--border);
+    margin-top:2.5rem;
+}
+.footer-brand {
+    font-family:'Instrument Serif',serif;
+    font-size:17px; color:var(--text-white);
+    margin-bottom:.35rem;
+}
+.footer-sub  { font-size:11px; color:var(--text-dim); letter-spacing:.06em; line-height:1.8; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ---------- LOAD MODEL ----------
+# ────────────────────────────────────────────────────────────
+# LOAD MODEL
+# ────────────────────────────────────────────────────────────
 model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
 if not os.path.exists(model_path):
-    st.error("❌ Model file not found: model.pkl — ensure it is committed to your repository root.")
+    st.error("❌ Model file `model.pkl` not found. Place it next to this script.")
     st.stop()
 with open(model_path, "rb") as f:
     model = pickle.load(f)
 
-# ---------- PREDICTION ----------
-def predict_diabetes(data):
+# ────────────────────────────────────────────────────────────
+# PREDICTION
+# ────────────────────────────────────────────────────────────
+def predict_anemia(data):
     arr = np.asarray(data, dtype=float).reshape(1, -1)
     pred = model.predict(arr)[0]
     try:
         confidence = max(model.predict_proba(arr)[0]) * 100
     except Exception:
         confidence = None
-    label = "Diabetic" if pred == 1 else "Not Diabetic"
+    label = "Anemic" if pred == 1 else "Not Anemic"
     return label, confidence
 
-# ══════════════════════════════════════════
-#  SIDEBAR
-# ══════════════════════════════════════════
+# ════════════════════════════════════════════════════════════
+# SIDEBAR
+# ════════════════════════════════════════════════════════════
 with st.sidebar:
+    st.markdown('<div class="sb-logo">AnemiaCheck</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-tag">Clinical Screening System</div>', unsafe_allow_html=True)
+    st.markdown('<span class="sb-online"><span class="sb-pulse"></span> Model Online</span>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<span class="sb-section-h">About</span>', unsafe_allow_html=True)
     st.markdown("""
-    <div class='sb-logo'>
-        <span style='font-size:28px'>🩺</span>
-        <span class='sb-name'>GlucoSense</span>
-    </div>
-    <div class='sb-sec'>
-        <span class='sb-h'>Navigation</span>
-        <div class='sb-item'>📊 &nbsp; Risk Assessment</div>
-        <div class='sb-item'>📈 &nbsp; Analytics</div>
-        <div class='sb-item'>📋 &nbsp; Reports</div>
-        <div class='sb-item'>⚙️ &nbsp; Settings</div>
-    </div>
-    <div class='sb-sec'>
-        <span class='sb-h'>Model Stats</span>
-        <div class='sb-stat'><span>Algorithm</span><span class='sb-sv'>SVM / RF</span></div>
-        <div class='sb-stat'><span>Dataset</span><span class='sb-sv'>PIMA</span></div>
-        <div class='sb-stat'><span>Features</span><span class='sb-sv'>8</span></div>
-        <div class='sb-stat'><span>Output</span><span class='sb-sv'>Binary</span></div>
-        <div class='sb-stat'><span>Status</span><span class='sb-sv'>● Live</span></div>
-    </div>
-    <div class='sb-sec'>
-        <span class='sb-h'>About</span>
-        <p style='font-size:13px;line-height:1.7;color:#475569;'>
-            GlucoSense uses a machine learning model trained on the PIMA Indian Diabetes Dataset to estimate Type 2 diabetes risk from 8 clinical measurements.
-        </p>
-        <p style='font-size:11px;color:#334155;margin-top:10px;line-height:1.6;'>
-            ⚠️ Educational use only. Not a substitute for professional medical diagnosis.
-        </p>
-    </div>
+    <p style='font-size:13px;color:#636366;line-height:1.7;margin:0'>
+    This tool uses a trained ML model to detect anemia risk from routine blood count parameters.
+    Built on the <strong style='color:#8e8e93'>PIMA-style hematology dataset</strong>.
+    </p>
     """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════
-#  HEADER
-# ══════════════════════════════════════════
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<span class="sb-section-h">Model Specs</span>', unsafe_allow_html=True)
+    specs = [("Algorithm","RFC / SVM"), ("Features","Blood CBC"), ("Output","Binary"), ("Status","Deployed")]
+    for k, v in specs:
+        st.markdown(f'<div class="sb-item"><span class="sb-item-k">{k}</span><span class="sb-item-v">{v}</span></div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<span class="sb-section-h">Reference Ranges</span>', unsafe_allow_html=True)
+    refs = [
+        ("Hemoglobin ♂", "13.5–17.5 g/dL"),
+        ("Hemoglobin ♀", "12.0–15.5 g/dL"),
+        ("Hematocrit ♂", "41–53%"),
+        ("Hematocrit ♀", "36–46%"),
+        ("MCV",          "80–100 fL"),
+        ("MCH",          "27–33 pg"),
+        ("MCHC",         "31.5–35.7 g/dL"),
+    ]
+    for k, v in refs:
+        st.markdown(f"""
+        <div style='display:flex;justify-content:space-between;padding:.45rem 0;
+                    border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px'>
+            <span style='color:#636366'>{k}</span>
+            <span style='color:#8e8e93;font-family:"DM Mono",monospace;font-size:11px'>{v}</span>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="sb-tip">⚠️ Educational use only. Not a substitute for professional clinical diagnosis.</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <p style='font-size:11px;color:#3a3a3f;text-align:center;line-height:1.8'>
+        Built by <strong style='color:#636366'>Kartvaya Raikwar</strong><br>
+        Machine Learning · Healthcare AI
+    </p>""", unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════
+# HERO
+# ════════════════════════════════════════════════════════════
 st.markdown("""
-<div class='gs-header'>
-    <div class='gs-logo'>🩺</div>
-    <div>
-        <div class='gs-h1'>GlucoSense AI</div>
-        <p class='gs-sub'>Advanced Diabetes Risk Assessment Platform</p>
-        <div class='gs-badge'>Model Active</div>
+<div class="hero">
+    <div class="hero-badge">
+        <span class="hero-dot"></span>
+        Clinical Screening System
     </div>
+    <div class="hero-title">Anemia Risk <em>Assessment</em></div>
+    <p class="hero-sub">Enter complete blood count (CBC) parameters to receive an AI-assisted anemia risk classification with model confidence scoring.</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════
-#  METRIC STRIP
-# ══════════════════════════════════════════
-m1, m2, m3, m4 = st.columns(4)
+# ════════════════════════════════════════════════════════════
+# METRIC STRIP
+# ════════════════════════════════════════════════════════════
+c1, c2, c3, c4 = st.columns(4)
 metrics = [
-    ("🧬", "Input Features", "8"),
-    ("🎯", "Output Classes", "2"),
-    ("🗄️", "Training Data", "PIMA"),
-    ("⚡", "Inference", "<1ms"),
+    ("🧬", "CBC", "Input Type"),
+    ("⚡", "< 1s", "Response Time"),
+    ("🎯", "Binary", "Output Class"),
+    ("📋", "~85%", "Model Accuracy"),
 ]
-for col, (ico, lbl, val) in zip([m1, m2, m3, m4], metrics):
-    with col:
-        st.markdown(f"""
-        <div class='gs-metric'>
-            <div class='gs-m-ico'>{ico}</div>
-            <div class='gs-m-lbl'>{lbl}</div>
-            <div class='gs-m-val'>{val}</div>
-        </div>""", unsafe_allow_html=True)
+for col, (icon, val, lbl) in zip([c1,c2,c3,c4], metrics):
+    col.markdown(f"""
+    <div class="mc-wrap">
+        <div class="mc-icon">{icon}</div>
+        <span class="mc-val">{val}</span>
+        <div class="mc-lbl">{lbl}</div>
+    </div>""", unsafe_allow_html=True)
 
-st.markdown("<div class='gs-sep'></div>", unsafe_allow_html=True)
+st.write("")
 
-# ══════════════════════════════════════════
-#  INPUT FORM
-# ══════════════════════════════════════════
-left, right = st.columns(2, gap="large")
+# ════════════════════════════════════════════════════════════
+# INPUTS
+# ════════════════════════════════════════════════════════════
+left, right = st.columns([3, 2], gap="large")
 
 with left:
-    st.markdown("""
-    <div class='gs-card'>
-        <div class='gs-card-title'>🩸 Physiological Parameters</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="form-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-head">🔴 &nbsp; Red Blood Cell Indices</div>', unsafe_allow_html=True)
 
-    st.markdown("<div class='gs-grp'>👶 &nbsp; Reproductive History</div>", unsafe_allow_html=True)
-    pregnancies = st.number_input("Number of Pregnancies", min_value=0, max_value=20, value=0, step=1,
-                                  help="Total number of pregnancies")
+    fa, fb = st.columns(2)
+    with fa:
+        st.markdown('<div class="field-lbl">Hemoglobin (g/dL)</div>', unsafe_allow_html=True)
+        hemoglobin = st.number_input("Hemoglobin", min_value=0.0, max_value=25.0, value=0.0,
+                                     step=0.1, format="%.1f", label_visibility="collapsed",
+                                     help="Blood hemoglobin concentration. Normal ♂: 13.5–17.5, ♀: 12.0–15.5 g/dL")
+    with fb:
+        st.markdown('<div class="field-lbl">Hematocrit (%)</div>', unsafe_allow_html=True)
+        hematocrit = st.number_input("Hematocrit", min_value=0.0, max_value=70.0, value=0.0,
+                                     step=0.1, format="%.1f", label_visibility="collapsed",
+                                     help="Packed cell volume percentage. Normal ♂: 41–53%, ♀: 36–46%")
 
-    st.markdown("<div class='gs-grp'>🩸 &nbsp; Blood Markers</div>", unsafe_allow_html=True)
-    glucose = st.number_input("Plasma Glucose (mg/dL)", min_value=0, max_value=300, value=100,
-                              help="2-hour plasma glucose in OGTT. Normal: 70–140 mg/dL")
-    blood_pressure = st.number_input("Diastolic Blood Pressure (mmHg)", min_value=0, max_value=200, value=70,
-                                     help="Resting diastolic pressure. Normal: 60–80 mmHg")
-    insulin = st.number_input("2-Hour Serum Insulin (μU/mL)", min_value=0, max_value=900, value=80,
-                              help="Serum insulin level. Normal: 16–166 μU/mL")
+    fc, fd = st.columns(2)
+    with fc:
+        st.markdown('<div class="field-lbl">MCV (fL)</div>', unsafe_allow_html=True)
+        mcv = st.number_input("MCV", min_value=0.0, max_value=130.0, value=0.0,
+                              step=0.1, format="%.1f", label_visibility="collapsed",
+                              help="Mean Corpuscular Volume. Normal: 80–100 fL")
+    with fd:
+        st.markdown('<div class="field-lbl">MCH (pg)</div>', unsafe_allow_html=True)
+        mch = st.number_input("MCH", min_value=0.0, max_value=50.0, value=0.0,
+                              step=0.1, format="%.1f", label_visibility="collapsed",
+                              help="Mean Corpuscular Hemoglobin. Normal: 27–33 pg")
 
-    st.markdown("""<div class='gs-tip'>
-        💡 <strong>Tip:</strong> Glucose and insulin values should reflect fasting or post-load readings from recent lab work.
-    </div>""", unsafe_allow_html=True)
+    fe, ff = st.columns(2)
+    with fe:
+        st.markdown('<div class="field-lbl">MCHC (g/dL)</div>', unsafe_allow_html=True)
+        mchc = st.number_input("MCHC", min_value=0.0, max_value=45.0, value=0.0,
+                               step=0.1, format="%.1f", label_visibility="collapsed",
+                               help="Mean Corpuscular Hemoglobin Concentration. Normal: 31.5–35.7 g/dL")
+    with ff:
+        st.markdown('<div class="field-lbl">RBC Count (×10⁶/μL)</div>', unsafe_allow_html=True)
+        rbc = st.number_input("RBC", min_value=0.0, max_value=10.0, value=0.0,
+                              step=0.01, format="%.2f", label_visibility="collapsed",
+                              help="Red Blood Cell count. Normal ♂: 4.7–6.1, ♀: 4.2–5.4 ×10⁶/μL")
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="form-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-head">⚪ &nbsp; Patient Demographics</div>', unsafe_allow_html=True)
+
+    fg, fh = st.columns(2)
+    with fg:
+        st.markdown('<div class="field-lbl">Gender</div>', unsafe_allow_html=True)
+        gender_label = st.selectbox("Gender", ["Female", "Male"], label_visibility="collapsed")
+        gender = 0 if gender_label == "Female" else 1
+    with fh:
+        st.markdown('<div class="field-lbl">Age (years)</div>', unsafe_allow_html=True)
+        age = st.number_input("Age", min_value=1, max_value=120, value=25,
+                              label_visibility="collapsed", help="Patient age in years")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div style="margin-top:.4rem">', unsafe_allow_html=True)
+    predict_clicked = st.button("Run Anemia Screening", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════
+# RIGHT COLUMN
+# ════════════════════════════════════════════════════════════
 with right:
-    st.markdown("""
-    <div class='gs-card'>
-        <div class='gs-card-title'>📐 Anthropometric & Genetic Markers</div>
-    </div>""", unsafe_allow_html=True)
+    # Live summary
+    st.markdown('<div class="sum-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-head" style="margin-bottom:1.1rem">📋 &nbsp; Parameter Summary</div>', unsafe_allow_html=True)
 
-    st.markdown("<div class='gs-grp'>📏 &nbsp; Body Composition</div>", unsafe_allow_html=True)
-    skin_thickness = st.number_input("Triceps Skin Fold Thickness (mm)", min_value=0, max_value=100, value=20,
-                                     help="Triceps skin fold thickness. Normal: 10–50 mm")
-    bmi = st.number_input("Body Mass Index (kg/m²)", min_value=0.0, max_value=70.0, value=25.0, step=0.1,
-                          help="Weight / height². Normal: 18.5–24.9")
-
-    st.markdown("<div class='gs-grp'>🧬 &nbsp; Genetic & Demographic</div>", unsafe_allow_html=True)
-    pedigree = st.number_input("Diabetes Pedigree Function", min_value=0.0, max_value=3.0, value=0.47, step=0.01,
-                               help="Hereditary diabetes likelihood (0.08–2.42). Higher = stronger family history")
-    age = st.number_input("Age (years)", min_value=1, max_value=120, value=30,
-                          help="Patient age in years")
-
-    st.markdown("""<div class='gs-tip'>
-        💡 <strong>Tip:</strong> The Diabetes Pedigree Function encodes hereditary influence — higher values indicate stronger family risk.
-    </div>""", unsafe_allow_html=True)
-
-# ══════════════════════════════════════════
-#  PREDICT BUTTON
-# ══════════════════════════════════════════
-st.markdown("<div class='gs-sep'></div>", unsafe_allow_html=True)
-_, btn_col, _ = st.columns([1, 2, 1])
-with btn_col:
-    clicked = st.button("🔬  Run Diabetes Risk Assessment", use_container_width=True)
-
-# ══════════════════════════════════════════
-#  RESULT
-# ══════════════════════════════════════════
-if clicked:
-    data = [pregnancies, glucose, blood_pressure,
-            skin_thickness, insulin, bmi, pedigree, age]
-
-    with st.spinner("Analyzing clinical parameters..."):
-        time.sleep(0.9)
-
-    result, confidence = predict_diabetes(data)
-    is_bad = result == "Diabetic"
-
-    panel_cls  = "gs-result-bad" if is_bad else "gs-result-good"
-    title_cls  = "gs-r-bad"      if is_bad else "gs-r-good"
-    icon       = "⚠️"            if is_bad else "✅"
-    sub_text   = (
-        "The model indicates <strong>elevated risk</strong> for Type 2 Diabetes. "
-        "Please consult a licensed physician for clinical confirmation and personalised guidance."
-        if is_bad else
-        "The model indicates <strong>low risk</strong> for Type 2 Diabetes based on the provided values. "
-        "Maintain healthy lifestyle habits and schedule regular checkups."
-    )
-    conf_val   = (confidence / 100.0) if confidence else 0.0
-    conf_label = f"{confidence:.1f}%" if confidence else "N/A"
-    certainty  = "High" if conf_val > 0.8 else "Moderate" if conf_val > 0.6 else "Low"
-
-    st.markdown("<div class='gs-sep'></div>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class='gs-result {panel_cls}'>
-        <div class='gs-r-ico'>{icon}</div>
-        <div class='gs-r-title {title_cls}'>{result}</div>
-        <div class='gs-r-sub'>{sub_text}</div>
-    </div>""", unsafe_allow_html=True)
-
-    # Confidence bar
-    st.markdown("<br>", unsafe_allow_html=True)
-    _, cbar, _ = st.columns([1, 2, 1])
-    with cbar:
-        st.markdown(f"""
-        <div class='gs-conf-row'>
-            <span>Model Confidence</span>
-            <span class='gs-conf-pct'>{conf_label}</span>
-        </div>""", unsafe_allow_html=True)
-        st.progress(conf_val)
-        st.markdown(f"""
-        <div style='text-align:center;font-size:12px;color:var(--t3);margin-top:6px;'>
-            PIMA dataset training · {certainty} certainty zone
-        </div>""", unsafe_allow_html=True)
-
-    # Input summary grid
-    st.markdown("<div class='gs-sep'></div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='font-family:Syne,sans-serif;font-size:11px;font-weight:700;
-                color:#38bdf8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;'>
-        📋 Input Summary
-    </div>""", unsafe_allow_html=True)
-
-    items = [
-        ("👶","Pregnancies", str(pregnancies)),
-        ("🩸","Glucose",f"{glucose} mg/dL"),
-        ("💓","Blood Pressure",f"{blood_pressure} mmHg"),
-        ("📏","Skin Thickness",f"{skin_thickness} mm"),
-        ("💉","Insulin",f"{insulin} μU/mL"),
-        ("⚖️","BMI",f"{bmi:.1f}"),
-        ("🧬","Pedigree Fn.",f"{pedigree:.2f}"),
-        ("🗓️","Age",f"{age} yrs"),
+    summary = [
+        ("Hemoglobin",  f"{hemoglobin:.1f}", "g/dL"),
+        ("Hematocrit",  f"{hematocrit:.1f}", "%"),
+        ("MCV",         f"{mcv:.1f}",        "fL"),
+        ("MCH",         f"{mch:.1f}",        "pg"),
+        ("MCHC",        f"{mchc:.1f}",       "g/dL"),
+        ("RBC Count",   f"{rbc:.2f}",        "×10⁶/μL"),
+        ("Gender",      gender_label,        ""),
+        ("Age",         str(age),            "yrs"),
     ]
-    cols = st.columns(4)
-    for i, (ico, lbl, val) in enumerate(items):
-        with cols[i % 4]:
-            st.markdown(f"""
-            <div class='gs-sum-item'>
-                <div class='gs-sum-ico'>{ico}</div>
-                <div class='gs-sum-lbl'>{lbl}</div>
-                <div class='gs-sum-val'>{val}</div>
+    for name, val, unit in summary:
+        unit_span = f'<span style="font-size:10px;color:#3a3a3f;margin-left:3px">{unit}</span>' if unit else ""
+        st.markdown(f"""
+        <div class="sum-row">
+            <span class="sum-key">{name}</span>
+            <span class="sum-val">{val}{unit_span}</span>
+        </div>""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Result
+    if predict_clicked:
+        data_in = [hemoglobin, hematocrit, mcv, mch, mchc, rbc, gender]
+
+        with st.spinner("Analyzing CBC parameters…"):
+            time.sleep(0.85)
+            result, confidence = predict_anemia(data_in)
+
+        st.write("")
+        is_anemic = result == "Anemic"
+
+        if is_anemic:
+            st.markdown("""
+            <div class="result-wrap result-risk">
+                <div class="result-ico">⚠️</div>
+                <div class="result-lbl">Anemia Detected</div>
+                <div class="result-desc">Biomarkers indicate anemia risk.<br>Clinical follow-up is recommended.</div>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="result-wrap result-clear">
+                <div class="result-ico">✅</div>
+                <div class="result-lbl">Not Anemic</div>
+                <div class="result-desc">Parameters within acceptable range.<br>Continue routine health monitoring.</div>
             </div>""", unsafe_allow_html=True)
 
-# ══════════════════════════════════════════
-#  FOOTER
-# ══════════════════════════════════════════
+        if confidence is not None:
+            conf_v = confidence / 100.0
+            if confidence >= 80:
+                badge_cls, badge_txt = "conf-high", "High Confidence"
+            elif confidence >= 60:
+                badge_cls, badge_txt = "conf-mid",  "Moderate Confidence"
+            else:
+                badge_cls, badge_txt = "conf-low",  "Low Confidence"
+
+            st.markdown(f"""
+            <div class="conf-card">
+                <div class="conf-head">
+                    <span class="conf-title">Model Confidence</span>
+                    <span class="conf-pct">{confidence:.1f}%</span>
+                </div>""", unsafe_allow_html=True)
+            st.progress(conf_v)
+            st.markdown(f"""
+                <div style="display:flex;justify-content:flex-end;margin-top:.7rem">
+                    <span class="conf-badge {badge_cls}">{badge_txt}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="disclaimer">
+            ℹ️ <strong style="color:#8e8e93">Disclaimer:</strong>
+            This result is generated by a machine learning model and is intended for
+            educational purposes only. It does not constitute a medical diagnosis.
+            Please consult a licensed haematologist or physician.
+        </div>""", unsafe_allow_html=True)
+
+    else:
+        st.markdown("""
+        <div class="await-box">
+            <div class="await-icon">🔬</div>
+            <div class="await-title">Awaiting Analysis</div>
+            <div class="await-sub">
+                Enter CBC parameters and click<br>
+                <span class="await-cta">Run Anemia Screening</span>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════
+# FOOTER
+# ════════════════════════════════════════════════════════════
 st.markdown("""
-<div class='gs-footer'>
-    <div class='gs-footer-brand'>
-        🩺 &nbsp; <span class='gs-footer-hl'>GlucoSense AI</span>
-        &nbsp;·&nbsp; Diabetes Risk Assessment Platform
-    </div>
-    <div class='gs-footer-sub'>
-        Developed by Kartvaya Raikwar &nbsp;·&nbsp; Machine Learning Project &nbsp;·&nbsp;
-        For educational purposes only — not a clinical diagnostic tool.
+<div class="footer">
+    <div class="footer-brand">AnemiaCheck · Clinical Screening System</div>
+    <div class="footer-sub">
+        Developed by <strong style="color:#8e8e93">Kartvaya Raikwar</strong>
+        &nbsp;·&nbsp; Machine Learning · Healthcare AI
+        &nbsp;·&nbsp; For educational purposes only &nbsp;·&nbsp; © 2025
     </div>
 </div>
 """, unsafe_allow_html=True)
