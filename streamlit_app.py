@@ -4,8 +4,6 @@ import streamlit as st
 import os
 import time
 import datetime
-import json
-import plotly.graph_objects as go
 
 # ═══════════════════════════════════════════════════════════════
 #  PAGE CONFIG
@@ -532,40 +530,80 @@ def predict_diabetes(data):
     return label, confidence, risk_prob
 
 # ═══════════════════════════════════════════════════════════════
-#  HELPER — PLOTLY GAUGE
+#  HELPER — PURE CSS/SVG GAUGE (no plotly dependency)
 # ═══════════════════════════════════════════════════════════════
-def make_gauge(value: float, is_dark: bool):
-    text_color = "#f1f5f9" if is_dark else "#0f172a"
-    bg_color   = "rgba(0,0,0,0)" 
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value,
-        number={"suffix":"%","font":{"size":28,"color":text_color,"family":"Outfit"}},
-        gauge={
-            "axis":{"range":[0,100],"tickwidth":1,
-                    "tickcolor":"rgba(148,163,184,0.3)",
-                    "tickfont":{"size":10,"color":"rgba(148,163,184,0.6)"}},
-            "bar":{"color":"rgba(0,0,0,0)","thickness":0},
-            "bgcolor":"rgba(255,255,255,0.04)",
-            "borderwidth":0,
-            "steps":[
-                {"range":[0,40],  "color":"rgba(16,185,129,0.25)"},
-                {"range":[40,70], "color":"rgba(245,158,11,0.25)"},
-                {"range":[70,100],"color":"rgba(244,63,94,0.25)"},
-            ],
-            "threshold":{
-                "line":{"color":"#22d3ee","width":3},
-                "thickness":0.8,
-                "value":value
-            },
-        }
-    ))
-    fig.update_layout(
-        paper_bgcolor=bg_color, plot_bgcolor=bg_color,
-        font={"family":"Outfit"},
-        height=220, margin=dict(t=30,b=10,l=30,r=30),
-    )
-    return fig
+def make_gauge_html(value: float) -> str:
+    """Render a semicircular SVG arc gauge with zone colouring."""
+    # clamp
+    v = max(0.0, min(float(value), 100.0))
+
+    # arc geometry  (semicircle, r=80, cx=100, cy=100)
+    cx, cy, r = 100, 100, 78
+    import math
+    def polar(deg):
+        rad = math.radians(deg)
+        return cx + r * math.cos(rad), cy + r * math.sin(rad)
+
+    # 180° sweep from 180° → 0°  (left → right along top)
+    # map value 0-100 → angle 180° → 0°
+    angle = 180 - (v / 100.0) * 180   # degrees from left
+    nx, ny = polar(angle)
+
+    # zone arc colours (green 0-40, amber 40-70, red 70-100)
+    def arc_path(a1, a2, col, opa):
+        x1, y1 = polar(180 - a1 / 100 * 180)
+        x2, y2 = polar(180 - a2 / 100 * 180)
+        large = 1 if (a2 - a1) > 50 else 0
+        return (f'<path d="M {x1:.2f} {y1:.2f} A {r} {r} 0 {large} 1 {x2:.2f} {y2:.2f}" '
+                f'fill="none" stroke="{col}" stroke-width="14" '
+                f'stroke-opacity="{opa}" stroke-linecap="round"/>')
+
+    # needle
+    nlen = r - 10
+    nx2 = cx + nlen * math.cos(math.radians(angle))
+    ny2 = cy + nlen * math.sin(math.radians(angle))
+
+    # colour of value text
+    if v < 40:
+        txt_col = "#10b981"
+    elif v < 70:
+        txt_col = "#f59e0b"
+    else:
+        txt_col = "#f43f5e"
+
+    svg = f"""
+    <div style="text-align:center;padding:8px 0 0;">
+      <svg viewBox="20 20 160 100" width="100%" style="max-width:220px;overflow:visible;">
+        <!-- track -->
+        <path d="M 22 100 A 78 78 0 0 1 178 100"
+              fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="14" stroke-linecap="round"/>
+        <!-- zones -->
+        {arc_path(0,  40, '#10b981', '0.55')}
+        {arc_path(40, 70, '#f59e0b', '0.55')}
+        {arc_path(70,100, '#f43f5e', '0.55')}
+        <!-- needle -->
+        <line x1="{cx}" y1="{cy}"
+              x2="{nx2:.2f}" y2="{ny2:.2f}"
+              stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- pivot -->
+        <circle cx="{cx}" cy="{cy}" r="5" fill="#22d3ee"/>
+        <!-- value text -->
+        <text x="{cx}" y="92" text-anchor="middle"
+              font-family="Outfit,sans-serif" font-size="18" font-weight="900"
+              fill="{txt_col}">{v:.0f}%</text>
+        <text x="{cx}" y="110" text-anchor="middle"
+              font-family="Outfit,sans-serif" font-size="7" font-weight="600"
+              fill="rgba(148,163,184,0.6)" letter-spacing="1">RISK SCORE</text>
+      </svg>
+      <div style="display:flex;justify-content:center;gap:14px;font-size:10px;
+                  font-weight:700;letter-spacing:.05em;margin-top:2px;">
+        <span style="color:#10b981;">● LOW</span>
+        <span style="color:#f59e0b;">● MOD</span>
+        <span style="color:#f43f5e;">● HIGH</span>
+      </div>
+    </div>
+    """
+    return svg
 
 # ═══════════════════════════════════════════════════════════════
 #  HELPER — LIVE RISK ESTIMATE (heuristic, model-agnostic)
@@ -945,17 +983,10 @@ else:
         gauge_val = risk_prob if risk_prob is not None else (confidence if confidence else 50.0)
         st.markdown(f"""
         <div style='background:var(--card);border:1px solid var(--border);
-             border-radius:16px;padding:18px 12px 8px;text-align:center;'>
+             border-radius:16px;padding:18px 12px 12px;text-align:center;'>
             <div style='font-size:11px;font-weight:700;letter-spacing:.1em;
                  text-transform:uppercase;color:var(--t3);margin-bottom:4px;'>Risk Gauge</div>
-        """, unsafe_allow_html=True)
-        st.plotly_chart(make_gauge(gauge_val, IS_DARK), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("""
-        <div style='display:flex;justify-content:space-around;padding:0 8px 8px;font-size:10px;font-weight:600;letter-spacing:.05em;'>
-            <span style='color:#10b981;'>● LOW</span>
-            <span style='color:#f59e0b;'>● MOD</span>
-            <span style='color:#f43f5e;'>● HIGH</span>
-        </div>
+            {make_gauge_html(gauge_val)}
         </div>""", unsafe_allow_html=True)
 
     with c_col:
