@@ -583,34 +583,24 @@ with left:
                                      step=0.1, format="%.1f", label_visibility="collapsed",
                                      help="Blood hemoglobin concentration. Normal ♂: 13.5–17.5, ♀: 12.0–15.5 g/dL")
     with fb:
-        st.markdown('<div class="field-lbl">Hematocrit (%)</div>', unsafe_allow_html=True)
-        hematocrit = st.number_input("Hematocrit", min_value=0.0, max_value=70.0, value=0.0,
-                                     step=0.1, format="%.1f", label_visibility="collapsed",
-                                     help="Packed cell volume percentage. Normal ♂: 41–53%, ♀: 36–46%")
-
-    fc, fd = st.columns(2)
-    with fc:
-        st.markdown('<div class="field-lbl">MCV (fL)</div>', unsafe_allow_html=True)
-        mcv = st.number_input("MCV", min_value=0.0, max_value=130.0, value=0.0,
-                              step=0.1, format="%.1f", label_visibility="collapsed",
-                              help="Mean Corpuscular Volume. Normal: 80–100 fL")
-    with fd:
         st.markdown('<div class="field-lbl">MCH (pg)</div>', unsafe_allow_html=True)
-        mch = st.number_input("MCH", min_value=0.0, max_value=50.0, value=0.0,
+        mch = st.number_input("MCH", min_value=0.0, max_value=50.0, value=27.0,
                               step=0.1, format="%.1f", label_visibility="collapsed",
                               help="Mean Corpuscular Hemoglobin. Normal: 27–33 pg")
 
-    fe, ff = st.columns(2)
-    with fe:
+    fc, fd = st.columns(2)
+    with fc:
         st.markdown('<div class="field-lbl">MCHC (g/dL)</div>', unsafe_allow_html=True)
-        mchc = st.number_input("MCHC", min_value=0.0, max_value=45.0, value=0.0,
+        mchc = st.number_input("MCHC", min_value=0.0, max_value=45.0, value=31.5,
                                step=0.1, format="%.1f", label_visibility="collapsed",
                                help="Mean Corpuscular Hemoglobin Concentration. Normal: 31.5–35.7 g/dL")
-    with ff:
-        st.markdown('<div class="field-lbl">RBC Count (×10⁶/μL)</div>', unsafe_allow_html=True)
-        rbc = st.number_input("RBC", min_value=0.0, max_value=10.0, value=0.0,
-                              step=0.01, format="%.2f", label_visibility="collapsed",
-                              help="Red Blood Cell count. Normal ♂: 4.7–6.1, ♀: 4.2–5.4 ×10⁶/μL")
+    with fd:
+        st.markdown('<div class="field-lbl">MCV (fL)</div>', unsafe_allow_html=True)
+        mcv = st.number_input("MCV", min_value=0.0, max_value=130.0, value=80.0,
+                              step=0.1, format="%.1f", label_visibility="collapsed",
+                              help="Mean Corpuscular Volume. Normal: 80–100 fL")
+
+
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -641,14 +631,11 @@ with right:
     st.markdown('<div class="section-head" style="margin-bottom:1.1rem">📋 &nbsp; Parameter Summary</div>', unsafe_allow_html=True)
 
     summary = [
+        ("Gender",      gender_label,        ""),
         ("Hemoglobin",  f"{hemoglobin:.1f}", "g/dL"),
-        ("Hematocrit",  f"{hematocrit:.1f}", "%"),
-        ("MCV",         f"{mcv:.1f}",        "fL"),
         ("MCH",         f"{mch:.1f}",        "pg"),
         ("MCHC",        f"{mchc:.1f}",       "g/dL"),
-        ("RBC Count",   f"{rbc:.2f}",        "×10⁶/μL"),
-        ("Gender",      gender_label,        ""),
-        ("Age",         str(age),            "yrs"),
+        ("MCV",         f"{mcv:.1f}",        "fL"),
     ]
     for name, val, unit in summary:
         unit_span = f'<span style="font-size:10px;color:#3a3a3f;margin-left:3px">{unit}</span>' if unit else ""
@@ -661,7 +648,8 @@ with right:
 
     # Result
     if predict_clicked:
-        data_in = [hemoglobin, hematocrit, mcv, mch, mchc, rbc, gender]
+        # Feature order must match training: Gender, Hemoglobin, MCH, MCHC, MCV
+        data_in = [gender, hemoglobin, mch, mchc, mcv]
 
         with st.spinner("Analyzing CBC parameters…"):
             time.sleep(0.85)
