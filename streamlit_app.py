@@ -4,7 +4,6 @@ import streamlit as st
 import os
 import time
 
-# ---------- PAGE CONFIG ----------
 st.set_page_config(
     page_title="AnemiaCheck · Clinical Screening",
     page_icon="🩸",
@@ -16,334 +15,362 @@ CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── TOKENS ──────────────────────────────────────────────── */
+/* ══ TEAL CLINICAL COLOR SYSTEM ════════════════════════════ */
 :root {
-    --black:         #0a0a0b;
-    --surface:       #111113;
-    --surface-2:     #18181b;
-    --surface-3:     #1f1f23;
+    /* Brand teal scale */
+    --teal-900:      #063d4f;
+    --teal-800:      #09637E;
+    --teal-700:      #088395;
+    --teal-600:      #0a9aaf;
+    --teal-400:      #7AB2B2;
+    --teal-200:      #b8d9d9;
+    --teal-100:      #d4ecec;
+    --teal-50:       #EBF4F6;
+
+    /* Backgrounds */
+    --bg-0:          #04151a;
+    --bg-1:          #071e26;
+    --bg-2:          #0b2a35;
+    --bg-3:          #0f3240;
+    --bg-4:          #143c4b;
+
+    /* Card surfaces */
     --card-white:    rgba(255,255,255,0.97);
-    --card-ghost:    rgba(255,255,255,0.04);
-    --card-ghost-hv: rgba(255,255,255,0.07);
-    --border:        rgba(255,255,255,0.08);
-    --border-mid:    rgba(255,255,255,0.14);
-    --border-white:  rgba(255,255,255,0.85);
-    --text-white:    #f5f5f7;
-    --text-gray:     #8e8e93;
-    --text-dim:      #48484e;
-    --text-black:    #0a0a0b;
-    --text-dark:     #1c1c1e;
-    --green-muted:   #4ade80;
-    --green-bg:      rgba(74,222,128,0.10);
-    --green-border:  rgba(74,222,128,0.25);
-    --red-muted:     #f87171;
-    --red-bg:        rgba(248,113,113,0.10);
-    --red-border:    rgba(248,113,113,0.25);
-    --shadow-card:   0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
-    --shadow-white:  0 2px 12px rgba(255,255,255,0.06), 0 1px 0 rgba(255,255,255,0.08) inset;
-    --shadow-hover:  0 2px 4px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.5);
-    --r-xl:          20px;
-    --r-lg:          14px;
-    --r-md:          10px;
-    --r-sm:          7px;
+    --card-glass:    rgba(9,99,126,0.18);
+    --card-glass-hv: rgba(9,99,126,0.28);
+    --card-frost:    rgba(235,244,246,0.06);
+    --card-frost-hv: rgba(235,244,246,0.10);
+
+    /* Borders */
+    --border-dim:    rgba(122,178,178,0.12);
+    --border-mid:    rgba(122,178,178,0.22);
+    --border-up:     rgba(122,178,178,0.40);
+    --border-strong: rgba(8,131,149,0.65);
+
+    /* Typography */
+    --t-white:       #eef6f8;
+    --t-silver:      #a8c8cc;
+    --t-steel:       #6b9ea4;
+    --t-iron:        #3d6870;
+    --t-black:       #04151a;
+    --t-charcoal:    #0b2a35;
+
+    /* Semantic */
+    --ok-text:       #5ecfb0;
+    --ok-bg:         rgba(94,207,176,0.10);
+    --ok-border:     rgba(94,207,176,0.28);
+    --risk-text:     #f4948a;
+    --risk-bg:       rgba(244,148,138,0.10);
+    --risk-border:   rgba(244,148,138,0.28);
+
+    /* Radii */
+    --r-xl:  20px;
+    --r-lg:  14px;
+    --r-md:  10px;
+    --r-sm:  7px;
+
+    /* Shadows */
+    --sh-card:  0 1px 3px rgba(0,0,0,0.5), 0 8px 28px rgba(0,0,0,0.45);
+    --sh-white: 0 2px 16px rgba(9,99,126,0.18), 0 1px 0 rgba(255,255,255,0.12) inset;
+    --sh-hover: 0 4px 8px rgba(0,0,0,0.4), 0 20px 48px rgba(9,99,126,0.25);
+    --sh-glow:  0 0 32px rgba(8,131,149,0.22);
 }
 
-/* ── GLOBAL ───────────────────────────────────────────────── */
-html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+/* ══ GLOBAL ══════════════════════════════════════════════════ */
+html, body, [class*="css"],
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > .main {
+    background: var(--bg-0) !important;
+    color: var(--t-white) !important;
     font-family: 'Instrument Sans', -apple-system, sans-serif !important;
-    color: var(--text-white) !important;
 }
-.stApp, [data-testid="stAppViewContainer"], .main {
-    background: var(--black) !important;
+.stApp {
+    background:
+        radial-gradient(ellipse 70% 45% at 15% -5%,  rgba(9,99,126,0.22) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 35% at 90% 105%, rgba(8,131,149,0.14) 0%, transparent 60%),
+        var(--bg-0) !important;
+    min-height: 100vh;
 }
 [data-testid="stHeader"] {
-    background: rgba(10,10,11,0.9) !important;
-    backdrop-filter: blur(16px) !important;
-    border-bottom: 1px solid var(--border) !important;
+    background: rgba(4,21,26,0.90) !important;
+    backdrop-filter: blur(18px) !important;
+    border-bottom: 1px solid var(--border-dim) !important;
 }
-#MainMenu, footer { visibility: hidden; }
 .block-container { padding-top: 2.2rem !important; max-width: 1280px; }
+#MainMenu, footer { visibility: hidden; }
 
-/* ── SIDEBAR ──────────────────────────────────────────────── */
+/* ══ SIDEBAR ════════════════════════════════════════════════ */
 [data-testid="stSidebar"] {
-    background: var(--surface) !important;
-    border-right: 1px solid var(--border) !important;
+    background: var(--bg-1) !important;
+    border-right: 1px solid var(--border-dim) !important;
 }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem; }
-[data-testid="stSidebar"] * { color: var(--text-gray) !important; }
+[data-testid="stSidebar"] * { color: var(--t-steel) !important; }
 
-/* ── INPUTS ───────────────────────────────────────────────── */
+/* ══ INPUTS ══════════════════════════════════════════════════ */
 [data-testid="stNumberInput"] [data-baseweb="input"] {
-    background: var(--surface-2) !important;
+    background: var(--bg-2) !important;
     border: 1px solid var(--border-mid) !important;
     border-radius: var(--r-md) !important;
     transition: border-color .2s, box-shadow .2s !important;
 }
 [data-testid="stNumberInput"] [data-baseweb="input"]:focus-within {
-    border-color: rgba(255,255,255,0.5) !important;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.06) !important;
+    border-color: var(--teal-700) !important;
+    box-shadow: 0 0 0 3px rgba(8,131,149,0.18) !important;
 }
 [data-testid="stNumberInput"] input {
-    color: var(--text-white) !important;
+    color: var(--t-white) !important;
     font-family: 'DM Mono', monospace !important;
     font-size: 14px !important;
     background: transparent !important;
 }
 [data-testid="stNumberInput"] label {
-    color: var(--text-gray) !important;
+    color: var(--t-steel) !important;
     font-size: 12px !important;
     font-weight: 600 !important;
     letter-spacing: .04em !important;
 }
-[data-baseweb="input"] svg { fill: var(--text-dim) !important; }
+[data-baseweb="input"] svg { fill: var(--t-iron) !important; }
 
-/* ── BUTTON ───────────────────────────────────────────────── */
+/* Selectbox */
+[data-testid="stSelectbox"] > div > div {
+    background: var(--bg-2) !important;
+    border: 1px solid var(--border-mid) !important;
+    border-radius: var(--r-md) !important;
+    color: var(--t-white) !important;
+}
+
+/* ══ BUTTON ══════════════════════════════════════════════════ */
 .stButton > button {
     width: 100% !important;
-    background: var(--text-white) !important;
-    color: var(--text-black) !important;
+    background: linear-gradient(135deg, var(--teal-800) 0%, var(--teal-700) 100%) !important;
+    color: #ffffff !important;
     font-family: 'Instrument Sans', sans-serif !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
-    letter-spacing: .08em !important;
+    letter-spacing: .10em !important;
     text-transform: uppercase !important;
     border: none !important;
-    border-radius: var(--r-lg) !important;
-    padding: 0.85rem 2rem !important;
-    cursor: pointer !important;
+    border-radius: var(--r-md) !important;
+    padding: 0.9rem 2rem !important;
     transition: all .25s cubic-bezier(.34,1.56,.64,1) !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 16px rgba(255,255,255,0.1) !important;
+    box-shadow: 0 2px 8px rgba(9,99,126,0.45), 0 1px 0 rgba(255,255,255,0.08) inset !important;
 }
 .stButton > button:hover {
-    background: #ffffff !important;
+    background: linear-gradient(135deg, var(--teal-700) 0%, var(--teal-600) 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4), 0 12px 32px rgba(255,255,255,0.18) !important;
+    box-shadow: 0 6px 24px rgba(8,131,149,0.55), 0 1px 0 rgba(255,255,255,0.10) inset !important;
+    filter: brightness(1.06) !important;
 }
-.stButton > button:active { transform: translateY(0) scale(.98) !important; }
+.stButton > button:active { transform: scale(.97) translateY(0) !important; }
 
-/* ── PROGRESS ─────────────────────────────────────────────── */
+/* ══ PROGRESS ════════════════════════════════════════════════ */
 .stProgress > div > div > div > div {
-    background: linear-gradient(90deg,#e5e5e7,#ffffff) !important;
+    background: linear-gradient(90deg, var(--teal-700), var(--teal-400)) !important;
     border-radius: 99px !important;
 }
 .stProgress > div > div > div {
-    background: rgba(255,255,255,0.08) !important;
+    background: rgba(122,178,178,0.12) !important;
     border-radius: 99px !important;
     height: 8px !important;
 }
 
-/* ── SPINNER ──────────────────────────────────────────────── */
-.stSpinner > div { border-top-color: var(--text-white) !important; }
+/* ══ SPINNER ══════════════════════════════════════════════════ */
+.stSpinner > div { border-top-color: var(--teal-400) !important; }
 
-/* ── SCROLLBAR ────────────────────────────────────────────── */
+/* ══ SCROLLBAR ════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--black); }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+::-webkit-scrollbar-track { background: var(--bg-0); }
+::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 99px; }
+hr { border-color: var(--border-dim) !important; }
 
-/* ── DIVIDER ──────────────────────────────────────────────── */
-hr { border-color: var(--border) !important; margin: 1.8rem 0 !important; }
-
-/* ── ANIMATIONS ───────────────────────────────────────────── */
+/* ══ ANIMATIONS ══════════════════════════════════════════════ */
 @keyframes fadeUp {
     from { opacity:0; transform:translateY(14px); }
-    to   { opacity:1; transform:translateY(0);    }
+    to   { opacity:1; transform:translateY(0); }
 }
 @keyframes scaleIn {
-    from { opacity:0; transform:scale(.94); }
-    to   { opacity:1; transform:scale(1);   }
+    from { opacity:0; transform:scale(.93) translateY(8px); }
+    to   { opacity:1; transform:scale(1)   translateY(0); }
 }
 @keyframes pulseDot {
     0%,100% { opacity:1; }
-    50%      { opacity:.4; }
+    50%      { opacity:.35; }
 }
 
-/* ══════════════════════════════════════════════════════════
-   CUSTOM COMPONENTS
-══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   COMPONENTS
+══════════════════════════════════════════════════════════════ */
 
-/* HERO */
+/* HERO ─────────────────────────────────────────────────────── */
 .hero {
     background: var(--card-white);
     border-radius: var(--r-xl);
     padding: 2.4rem 2.8rem;
     margin-bottom: 1.8rem;
-    box-shadow: var(--shadow-white);
+    box-shadow: var(--sh-white);
     animation: fadeUp .45s ease both;
     position: relative;
     overflow: hidden;
 }
-.hero::after {
+.hero::before {
     content:'';
     position:absolute; top:0; right:0;
-    width:280px; height:280px;
-    background: radial-gradient(circle at 80% 20%, rgba(0,0,0,0.03) 0%, transparent 70%);
+    width:340px; height:340px;
+    background: radial-gradient(circle at 80% 20%, rgba(9,99,126,0.07) 0%, transparent 65%);
     pointer-events:none;
 }
 .hero-badge {
-    display:inline-flex; align-items:center; gap:6px;
-    background: var(--black);
-    color: var(--text-white);
+    display:inline-flex; align-items:center; gap:7px;
+    background: var(--teal-800);
+    color: #ffffff;
     border-radius: 99px;
-    padding: 5px 14px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
+    padding: 5px 16px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .13em; text-transform: uppercase;
     margin-bottom: 1.2rem;
+    box-shadow: 0 2px 10px rgba(9,99,126,0.35);
 }
 .hero-dot {
     width:6px; height:6px; border-radius:50%;
-    background: #4ade80;
+    background: var(--ok-text);
     animation: pulseDot 2s ease-in-out infinite;
 }
 .hero-title {
     font-family: 'Instrument Serif', serif;
     font-size: clamp(30px,4vw,48px);
     font-weight: 400;
-    color: var(--text-black);
+    color: var(--t-black);
     line-height: 1.1;
-    margin: 0 0 .6rem;
-    letter-spacing: -.02em;
+    margin: 0 0 .65rem;
+    letter-spacing: -.025em;
 }
-.hero-title em {
-    font-style: italic;
-    color: #3c3c43;
-}
+.hero-title em { font-style:italic; color: var(--teal-800); }
 .hero-sub {
-    font-size: 15px;
-    color: #636366;
-    margin: 0;
-    max-width: 500px;
-    line-height: 1.65;
+    font-size: 15px; color: #4a7a84;
+    margin: 0; max-width: 500px; line-height: 1.68;
 }
 
-/* METRIC CARDS */
+/* METRIC CARD ───────────────────────────────────────────────── */
 .mc-wrap {
-    background: var(--card-ghost);
-    border: 1px solid var(--border);
+    background: var(--card-frost);
+    border: 1px solid var(--border-dim);
     border-radius: var(--r-lg);
     padding: 1.2rem 1rem;
     text-align: center;
-    transition: background .2s, box-shadow .2s, transform .2s;
+    transition: background .2s, box-shadow .2s, transform .22s, border-color .2s;
     animation: fadeUp .45s .1s ease both;
     cursor: default;
 }
 .mc-wrap:hover {
-    background: var(--card-ghost-hv);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
+    background: var(--card-frost-hv);
     border-color: var(--border-mid);
+    transform: translateY(-3px);
+    box-shadow: var(--sh-hover);
 }
-.mc-icon { font-size: 22px; margin-bottom: 6px; }
-.mc-val  {
+.mc-icon { font-size: 22px; margin-bottom: 6px; opacity: .8; }
+.mc-val {
     font-family: 'DM Mono', monospace;
     font-size: 19px; font-weight: 500;
-    color: var(--text-white); display: block;
+    color: var(--teal-400); display: block;
 }
-.mc-lbl  {
+.mc-lbl {
     font-size: 10px; font-weight: 700;
     letter-spacing: .12em; text-transform: uppercase;
-    color: var(--text-dim); margin-top: 3px;
+    color: var(--t-iron); margin-top: 3px;
 }
 
-/* FORM CARD */
+/* FORM CARD ─────────────────────────────────────────────────── */
 .form-card {
-    background: var(--card-ghost);
-    border: 1px solid var(--border);
+    background: var(--card-frost);
+    border: 1px solid var(--border-dim);
     border-radius: var(--r-xl);
     padding: 2rem 2rem 1.6rem;
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--sh-card);
     animation: fadeUp .45s .15s ease both;
     margin-bottom: 1.2rem;
-    transition: border-color .25s;
+    transition: border-color .25s, box-shadow .25s;
 }
-.form-card:hover { border-color: var(--border-mid); }
-
+.form-card:hover {
+    border-color: var(--border-mid);
+    box-shadow: var(--sh-card), var(--sh-glow);
+}
 .section-head {
     font-size: 10px; font-weight: 700;
     letter-spacing: .18em; text-transform: uppercase;
-    color: var(--text-dim);
+    color: var(--t-iron);
     margin-bottom: 1.4rem;
     display: flex; align-items: center; gap: 10px;
 }
 .section-head::after {
     content:''; flex:1; height:1px;
-    background: var(--border);
+    background: linear-gradient(90deg, var(--border-mid), transparent);
 }
 .field-lbl {
     font-size: 12px; font-weight: 600;
-    color: var(--text-gray);
-    letter-spacing: .04em;
+    color: var(--t-steel); letter-spacing: .04em;
     margin-bottom: 4px;
     display: flex; align-items: center; gap: 5px;
 }
 
-/* SUMMARY CARD */
+/* SUMMARY CARD ──────────────────────────────────────────────── */
 .sum-card {
-    background: var(--card-ghost);
-    border: 1px solid var(--border);
+    background: var(--card-frost);
+    border: 1px solid var(--border-dim);
     border-radius: var(--r-xl);
     padding: 1.8rem 1.8rem 1.4rem;
     animation: fadeUp .45s .2s ease both;
     margin-bottom: 1.2rem;
+    transition: border-color .25s;
 }
+.sum-card:hover { border-color: var(--border-mid); }
 .sum-row {
     display:flex; justify-content:space-between; align-items:center;
-    padding: .42rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: .44rem 0;
+    border-bottom: 1px solid rgba(122,178,178,0.07);
 }
 .sum-row:last-child { border-bottom: none; }
-.sum-key { font-size:13px; color: var(--text-gray); }
-.sum-val {
-    font-family:'DM Mono',monospace; font-size:13px;
-    color: var(--text-white);
-}
+.sum-key { font-size:13px; color: var(--t-steel); }
+.sum-val { font-family:'DM Mono',monospace; font-size:13px; color: var(--t-white); }
 
-/* AWAITING */
+/* AWAIT BOX ─────────────────────────────────────────────────── */
 .await-box {
-    background: var(--card-ghost);
+    background: var(--card-frost);
     border: 1px dashed var(--border-mid);
     border-radius: var(--r-xl);
     padding: 2.8rem 2rem;
     text-align: center;
     animation: fadeUp .45s .25s ease both;
 }
-.await-icon { font-size:42px; margin-bottom:.9rem; opacity:.5; }
-.await-title { font-size:15px; font-weight:600; color:var(--text-gray); margin-bottom:.4rem; }
-.await-sub   { font-size:13px; color:var(--text-dim); line-height:1.6; }
-.await-cta   { color: var(--text-white); font-weight:600; }
+.await-icon { font-size:42px; margin-bottom:.9rem; opacity:.4; }
+.await-title { font-size:15px; font-weight:600; color:var(--t-steel); margin-bottom:.4rem; }
+.await-sub   { font-size:13px; color:var(--t-iron); line-height:1.65; }
+.await-cta   { color: var(--teal-400); font-weight:600; }
 
-/* RESULT */
+/* RESULT ────────────────────────────────────────────────────── */
 .result-wrap {
     border-radius: var(--r-xl);
-    padding: 2rem 1.8rem;
+    padding: 2.2rem 2rem;
     text-align: center;
-    animation: scaleIn .45s cubic-bezier(.34,1.56,.64,1) both;
+    animation: scaleIn .42s cubic-bezier(.34,1.56,.64,1) both;
     margin-bottom: 1rem;
 }
-.result-risk {
-    background: var(--red-bg);
-    border: 1px solid var(--red-border);
-}
-.result-clear {
-    background: var(--green-bg);
-    border: 1px solid var(--green-border);
-}
-.result-ico  { font-size:48px; margin-bottom:.7rem; }
-.result-lbl  {
+.result-risk  { background: var(--risk-bg);  border: 1px solid var(--risk-border); }
+.result-clear { background: var(--ok-bg);    border: 1px solid var(--ok-border); }
+.result-ico   { font-size:48px; margin-bottom:.75rem; }
+.result-lbl   {
     font-family: 'Instrument Serif', serif;
     font-size: 28px; font-weight: 400;
-    letter-spacing: -.01em;
-    margin-bottom: .35rem;
+    letter-spacing: -.015em; margin-bottom: .4rem;
 }
-.result-risk  .result-lbl  { color: var(--red-muted); }
-.result-clear .result-lbl  { color: var(--green-muted); }
-.result-desc { font-size:14px; color:var(--text-gray); line-height:1.6; }
+.result-risk  .result-lbl { color: var(--risk-text); }
+.result-clear .result-lbl { color: var(--ok-text); }
+.result-desc { font-size:14px; color:var(--t-steel); line-height:1.65; }
 
-/* CONFIDENCE */
+/* CONFIDENCE ────────────────────────────────────────────────── */
 .conf-card {
-    background: var(--card-ghost);
-    border: 1px solid var(--border);
+    background: var(--card-frost);
+    border: 1px solid var(--border-dim);
     border-radius: var(--r-lg);
     padding: 1.4rem 1.6rem;
     animation: fadeUp .35s ease both;
@@ -351,117 +378,112 @@ hr { border-color: var(--border) !important; margin: 1.8rem 0 !important; }
 }
 .conf-head {
     display:flex; justify-content:space-between; align-items:baseline;
-    margin-bottom:.7rem;
+    margin-bottom:.75rem;
 }
 .conf-title {
     font-size:10px; font-weight:700;
-    letter-spacing:.14em; text-transform:uppercase;
-    color: var(--text-dim);
+    letter-spacing:.16em; text-transform:uppercase;
+    color: var(--t-iron);
 }
 .conf-pct {
     font-family:'DM Mono',monospace;
     font-size:22px; font-weight:500;
-    color: var(--text-white);
+    color: var(--teal-400);
 }
 .conf-badge {
-    display:inline-block;
-    font-size:10px; font-weight:700;
+    display:inline-block; font-size:10px; font-weight:700;
     letter-spacing:.08em; text-transform:uppercase;
-    border-radius:99px; padding:3px 12px;
-    margin-top:.7rem;
+    border-radius:99px; padding:3px 12px; margin-top:.75rem;
 }
-.conf-high   { color:#4ade80; background:rgba(74,222,128,.1); border:1px solid rgba(74,222,128,.22); }
-.conf-mid    { color:#fbbf24; background:rgba(251,191,36,.1);  border:1px solid rgba(251,191,36,.22); }
-.conf-low    { color:#f87171; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.22); }
+.conf-high { color:var(--ok-text);   background:var(--ok-bg);   border:1px solid var(--ok-border); }
+.conf-mid  { color:var(--teal-400);  background:rgba(122,178,178,.08); border:1px solid rgba(122,178,178,.22); }
+.conf-low  { color:var(--risk-text); background:var(--risk-bg); border:1px solid var(--risk-border); }
 
-/* DISCLAIMER */
+/* DISCLAIMER ────────────────────────────────────────────────── */
 .disclaimer {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    padding: .75rem 1rem;
-    font-size: 11px; color: var(--text-dim); line-height: 1.65;
+    background: rgba(9,99,126,0.10);
+    border: 1px solid var(--border-dim);
+    border-left: 3px solid var(--teal-700);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    padding: .85rem 1rem;
+    font-size: 11px; color: var(--t-steel); line-height: 1.7;
 }
 
-/* SIDEBAR */
+/* SIDEBAR ───────────────────────────────────────────────────── */
 .sb-logo {
     font-family: 'Instrument Serif', serif;
     font-size: 22px; font-weight: 400;
-    color: var(--text-white) !important;
-    letter-spacing: -.01em;
-    margin-bottom: .2rem;
+    color: var(--teal-400) !important;
+    letter-spacing: -.01em; margin-bottom: .2rem;
 }
 .sb-tag {
-    font-size:10px; font-weight:700;
-    letter-spacing:.14em; text-transform:uppercase;
-    color: var(--text-dim) !important;
-    margin-bottom: 1.6rem;
+    font-size:10px !important; font-weight:700 !important;
+    letter-spacing:.14em !important; text-transform:uppercase !important;
+    color: var(--t-iron) !important; margin-bottom: 1.6rem;
 }
 .sb-online {
     display:inline-flex; align-items:center; gap:6px;
-    font-size:11px; font-weight:600;
-    color: #4ade80 !important;
-    letter-spacing:.06em; text-transform:uppercase;
+    font-size:11px !important; font-weight:700 !important;
+    letter-spacing:.08em !important; text-transform:uppercase !important;
+    color: var(--ok-text) !important;
 }
 .sb-pulse {
     width:7px; height:7px; border-radius:50%;
-    background:#4ade80;
-    box-shadow:0 0 6px #4ade80;
-    animation: pulseDot 2s ease-in-out infinite;
+    background: var(--ok-text);
+    box-shadow: 0 0 6px var(--ok-text);
     display:inline-block;
+    animation: pulseDot 2s ease-in-out infinite;
 }
-.sb-divider { height:1px; background:var(--border); margin:1.4rem 0; }
+.sb-divider { height:1px; background:var(--border-dim); margin:1.4rem 0; }
 .sb-section-h {
     font-size:9px !important; font-weight:700 !important;
     letter-spacing:.18em !important; text-transform:uppercase !important;
-    color: var(--text-dim) !important;
-    margin-bottom:.9rem !important;
-    display:block;
+    color: var(--t-iron) !important;
+    margin-bottom:.9rem !important; display:block;
 }
 .sb-item {
     display:flex; justify-content:space-between; align-items:center;
-    padding:.5rem 0; border-bottom:1px solid var(--border);
+    padding:.5rem 0; border-bottom:1px solid var(--border-dim);
     font-size:13px !important;
 }
 .sb-item:last-child { border-bottom:none; }
-.sb-item-k { color:var(--text-gray) !important; }
+.sb-item-k { color:var(--t-steel) !important; }
 .sb-item-v {
     font-family:'DM Mono',monospace; font-size:11px !important;
-    color:var(--text-white) !important;
-    background:var(--surface-3);
-    border:1px solid var(--border-mid);
+    color: var(--teal-400) !important;
+    background: rgba(9,99,126,0.20);
+    border: 1px solid var(--border-mid);
     border-radius:5px; padding:2px 8px;
 }
 .sb-tip {
-    background: rgba(255,255,255,0.03);
-    border-left: 2px solid rgba(255,255,255,0.15);
+    background: rgba(9,99,126,0.10);
+    border-left: 3px solid var(--teal-700);
     border-radius: 0 var(--r-sm) var(--r-sm) 0;
-    padding: .85rem .95rem;
-    font-size:12px !important; color:var(--text-dim) !important;
-    line-height:1.65 !important;
-    margin-top:.9rem;
+    padding: .9rem .95rem;
+    font-size:12px !important; color:var(--t-iron) !important;
+    line-height:1.65 !important; margin-top:.9rem;
 }
 
-/* FOOTER */
+/* FOOTER ────────────────────────────────────────────────────── */
 .footer {
     text-align:center;
     padding: 2.5rem 1rem 1.5rem;
-    border-top:1px solid var(--border);
+    border-top:1px solid var(--border-dim);
     margin-top:2.5rem;
 }
 .footer-brand {
     font-family:'Instrument Serif',serif;
-    font-size:17px; color:var(--text-white);
+    font-size:17px; color:var(--teal-400);
     margin-bottom:.35rem;
 }
-.footer-sub  { font-size:11px; color:var(--text-dim); letter-spacing:.06em; line-height:1.8; }
+.footer-sub { font-size:11px; color:var(--t-iron); letter-spacing:.06em; line-height:1.9; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ────────────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
 # LOAD MODEL
-# ────────────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
 model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
 if not os.path.exists(model_path):
     st.error("❌ Model file `model.pkl` not found. Place it next to this script.")
@@ -469,9 +491,9 @@ if not os.path.exists(model_path):
 with open(model_path, "rb") as f:
     model = pickle.load(f)
 
-# ────────────────────────────────────────────────────────────
-# PREDICTION
-# ────────────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
+# PREDICTION  (unchanged)
+# ════════════════════════════════════════════════════════════════
 def predict_anemia(data):
     arr = np.asarray(data, dtype=float).reshape(1, -1)
     pred = model.predict(arr)[0]
@@ -482,9 +504,9 @@ def predict_anemia(data):
     label = "Anemic" if pred == 1 else "Not Anemic"
     return label, confidence
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # SIDEBAR
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown('<div class="sb-logo">AnemiaCheck</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-tag">Clinical Screening System</div>', unsafe_allow_html=True)
@@ -493,49 +515,42 @@ with st.sidebar:
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown('<span class="sb-section-h">About</span>', unsafe_allow_html=True)
     st.markdown("""
-    <p style='font-size:13px;color:#636366;line-height:1.7;margin:0'>
+    <p style='font-size:13px;color:#3d6870;line-height:1.75;margin:0'>
     This tool uses a trained ML model to detect anemia risk from routine blood count parameters.
-    Built on the <strong style='color:#8e8e93'>PIMA-style hematology dataset</strong>.
-    </p>
-    """, unsafe_allow_html=True)
+    Built on the <strong style='color:#6b9ea4'>PIMA-style hematology dataset</strong>.
+    </p>""", unsafe_allow_html=True)
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown('<span class="sb-section-h">Model Specs</span>', unsafe_allow_html=True)
-    specs = [("Algorithm","RFC / SVM"), ("Features","Blood CBC"), ("Output","Binary"), ("Status","Deployed")]
-    for k, v in specs:
-        st.markdown(f'<div class="sb-item"><span class="sb-item-k">{k}</span><span class="sb-item-v">{v}</span></div>', unsafe_allow_html=True)
+    for k, v in [("Algorithm","RFC / SVM"), ("Features","Blood CBC"),
+                  ("Output","Binary"), ("Status","Deployed")]:
+        st.markdown(f'<div class="sb-item"><span class="sb-item-k">{k}</span><span class="sb-item-v">{v}</span></div>',
+                    unsafe_allow_html=True)
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown('<span class="sb-section-h">Reference Ranges</span>', unsafe_allow_html=True)
-    refs = [
-        ("Hemoglobin ♂", "13.5–17.5 g/dL"),
-        ("Hemoglobin ♀", "12.0–15.5 g/dL"),
-        ("Hematocrit ♂", "41–53%"),
-        ("Hematocrit ♀", "36–46%"),
-        ("MCV",          "80–100 fL"),
-        ("MCH",          "27–33 pg"),
-        ("MCHC",         "31.5–35.7 g/dL"),
-    ]
-    for k, v in refs:
+    for k, v in [("Hemoglobin ♂","13.5–17.5 g/dL"), ("Hemoglobin ♀","12.0–15.5 g/dL"),
+                  ("MCV","80–100 fL"), ("MCH","27–33 pg"), ("MCHC","31.5–35.7 g/dL")]:
         st.markdown(f"""
         <div style='display:flex;justify-content:space-between;padding:.45rem 0;
-                    border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px'>
-            <span style='color:#636366'>{k}</span>
-            <span style='color:#8e8e93;font-family:"DM Mono",monospace;font-size:11px'>{v}</span>
+                    border-bottom:1px solid rgba(122,178,178,0.08);font-size:12px'>
+            <span style='color:#3d6870'>{k}</span>
+            <span style='color:#6b9ea4;font-family:"DM Mono",monospace;font-size:11px'>{v}</span>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-tip">⚠️ Educational use only. Not a substitute for professional clinical diagnosis.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-tip">⚠️ Educational use only. Not a substitute for professional clinical diagnosis.</div>',
+                unsafe_allow_html=True)
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
-    <p style='font-size:11px;color:#3a3a3f;text-align:center;line-height:1.8'>
-        Built by <strong style='color:#636366'>Kartvaya Raikwar</strong><br>
+    <p style='font-size:11px;color:#2a4f58;text-align:center;line-height:1.9'>
+        Built by <strong style='color:#3d6870'>Kartvaya Raikwar</strong><br>
         Machine Learning · Healthcare AI
     </p>""", unsafe_allow_html=True)
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # HERO
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 st.markdown("""
 <div class="hero">
     <div class="hero-badge">
@@ -547,29 +562,28 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # METRIC STRIP
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 c1, c2, c3, c4 = st.columns(4)
-metrics = [
-    ("🧬", "CBC", "Input Type"),
-    ("⚡", "< 1s", "Response Time"),
-    ("🎯", "Binary", "Output Class"),
-    ("📋", "~85%", "Model Accuracy"),
-]
-for col, (icon, val, lbl) in zip([c1,c2,c3,c4], metrics):
+for col, (ico, val, lbl) in zip([c1,c2,c3,c4], [
+    ("🧬","CBC",     "Input Type"),
+    ("⚡","< 1s",    "Response Time"),
+    ("🎯","Binary",  "Output Class"),
+    ("📋","~85%",    "Model Accuracy"),
+]):
     col.markdown(f"""
     <div class="mc-wrap">
-        <div class="mc-icon">{icon}</div>
+        <div class="mc-icon">{ico}</div>
         <span class="mc-val">{val}</span>
         <div class="mc-lbl">{lbl}</div>
     </div>""", unsafe_allow_html=True)
 
 st.write("")
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # INPUTS
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 left, right = st.columns([3, 2], gap="large")
 
 with left:
@@ -599,9 +613,6 @@ with left:
         mcv = st.number_input("MCV", min_value=0.0, max_value=130.0, value=80.0,
                               step=0.1, format="%.1f", label_visibility="collapsed",
                               help="Mean Corpuscular Volume. Normal: 80–100 fL")
-
-
-
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="form-card">', unsafe_allow_html=True)
@@ -618,35 +629,31 @@ with left:
                               label_visibility="collapsed", help="Patient age in years")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="margin-top:.4rem">', unsafe_allow_html=True)
     predict_clicked = st.button("Run Anemia Screening", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # RIGHT COLUMN
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 with right:
-    # Live summary
     st.markdown('<div class="sum-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-head" style="margin-bottom:1.1rem">📋 &nbsp; Parameter Summary</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-head" style="margin-bottom:1.1rem">📋 &nbsp; Parameter Summary</div>',
+                unsafe_allow_html=True)
 
-    summary = [
-        ("Gender",      gender_label,        ""),
-        ("Hemoglobin",  f"{hemoglobin:.1f}", "g/dL"),
-        ("MCH",         f"{mch:.1f}",        "pg"),
-        ("MCHC",        f"{mchc:.1f}",       "g/dL"),
-        ("MCV",         f"{mcv:.1f}",        "fL"),
-    ]
-    for name, val, unit in summary:
-        unit_span = f'<span style="font-size:10px;color:#3a3a3f;margin-left:3px">{unit}</span>' if unit else ""
+    for name, val, unit in [
+        ("Gender",     gender_label,        ""),
+        ("Hemoglobin", f"{hemoglobin:.1f}", "g/dL"),
+        ("MCH",        f"{mch:.1f}",        "pg"),
+        ("MCHC",       f"{mchc:.1f}",       "g/dL"),
+        ("MCV",        f"{mcv:.1f}",        "fL"),
+    ]:
+        u = f'<span style="font-size:10px;color:#2a4f58;margin-left:3px">{unit}</span>' if unit else ""
         st.markdown(f"""
         <div class="sum-row">
             <span class="sum-key">{name}</span>
-            <span class="sum-val">{val}{unit_span}</span>
+            <span class="sum-val">{val}{u}</span>
         </div>""", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Result
     if predict_clicked:
         # Feature order must match training: Gender, Hemoglobin, MCH, MCHC, MCV
         data_in = [gender, hemoglobin, mch, mchc, mcv]
@@ -676,11 +683,11 @@ with right:
         if confidence is not None:
             conf_v = confidence / 100.0
             if confidence >= 80:
-                badge_cls, badge_txt = "conf-high", "High Confidence"
+                bc, bt = "conf-high", "High Confidence"
             elif confidence >= 60:
-                badge_cls, badge_txt = "conf-mid",  "Moderate Confidence"
+                bc, bt = "conf-mid",  "Moderate Confidence"
             else:
-                badge_cls, badge_txt = "conf-low",  "Low Confidence"
+                bc, bt = "conf-low",  "Low Confidence"
 
             st.markdown(f"""
             <div class="conf-card">
@@ -691,16 +698,16 @@ with right:
             st.progress(conf_v)
             st.markdown(f"""
                 <div style="display:flex;justify-content:flex-end;margin-top:.7rem">
-                    <span class="conf-badge {badge_cls}">{badge_txt}</span>
+                    <span class="conf-badge {bc}">{bt}</span>
                 </div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("""
         <div class="disclaimer">
-            ℹ️ <strong style="color:#8e8e93">Disclaimer:</strong>
-            This result is generated by a machine learning model and is intended for
-            educational purposes only. It does not constitute a medical diagnosis.
-            Please consult a licensed haematologist or physician.
+            <strong style="color:#6b9ea4">Disclaimer:</strong>
+            This result is generated by a machine learning model for educational purposes only.
+            It does not constitute a medical diagnosis.
+            Consult a licensed haematologist or physician.
         </div>""", unsafe_allow_html=True)
 
     else:
@@ -714,14 +721,14 @@ with right:
             </div>
         </div>""", unsafe_allow_html=True)
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # FOOTER
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 st.markdown("""
 <div class="footer">
     <div class="footer-brand">AnemiaCheck · Clinical Screening System</div>
     <div class="footer-sub">
-        Developed by <strong style="color:#8e8e93">Kartvaya Raikwar</strong>
+        Developed by <strong style="color:#6b9ea4">Kartvaya Raikwar</strong>
         &nbsp;·&nbsp; Machine Learning · Healthcare AI
         &nbsp;·&nbsp; For educational purposes only &nbsp;·&nbsp; © 2025
     </div>
